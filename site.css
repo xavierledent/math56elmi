@@ -36,6 +36,8 @@ a.fiche:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--bg)}
 .texte b{font:700 19px var(--ui)}
 .texte span{font-size:15px;color:var(--ink2)}
 .etat{flex:0 0 auto;font:700 15px var(--ui);color:var(--accent)}
+a.fiche .etat{color:#fff;background:var(--accent);padding:10px 16px;border-radius:10px;white-space:nowrap}
+a.fiche:hover .etat{box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 35%,transparent)}
 .bientot .rond{background:none;border:2px dashed var(--line);color:var(--ink2)}
 .bientot b{color:var(--ink2)}
 .bientot .etat{font:italic 400 15px var(--serif);color:var(--ink2)}
@@ -46,6 +48,7 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
   main{padding:28px 14px 40px 28px}
   h1{font-size:32px}
   .fiche{gap:14px;padding:14px 16px;flex-wrap:wrap}
-  .etat{flex-basis:100%;padding-left:58px}
+  .texte{flex-basis:calc(100% - 58px)}
+  .etat{margin-left:58px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
