@@ -444,10 +444,11 @@ footer {
 .pe-go:hover { background: #00665F; }
 .pe-non { display: block; margin: 14px auto 0; padding: 6px; font: 500 14px var(--ui); color: #4A5570; background: none; border: 0;
   text-decoration: underline; cursor: pointer; }
-.pe-bouton { position: fixed; right: 14px; bottom: 14px; z-index: 900; font: 600 13px var(--ui); color: #1B2A4A; background: #fff;
-  border: 1px solid #D3D2C9; border-radius: 999px; padding: 8px 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(27,42,74,.12); }
+.pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  color: #1B2A4A; background: #fff; border: 1.5px solid #D3D2C9; border-radius: 10px; cursor: pointer; }
 .pe-bouton:hover { border-color: #4A5570; }
-.pe-bouton[hidden] { display: none; }
+.pe-bouton svg { width: 20px; height: 20px; }
+.pe-bouton.flottant { position: fixed; right: 14px; bottom: 14px; z-index: 900; box-shadow: 0 2px 8px rgba(27,42,74,.12); }
 @media print { .pe-voile, .pe-bouton { display: none !important; } }
 /* @PLEIN-ECRAN:CSS fin */
 </style>
@@ -1288,12 +1289,13 @@ applyState();
 <script>
 /* @PLEIN-ECRAN:JS début : module partagé, repris par 4eme/src/build.mjs
    Le navigateur n'autorise le plein écran qu'après un geste de l'élève :
-   l'outil s'ouvre donc sur un écran d'accueil avec un bouton. Si l'élève en sort
-   (Échap), un petit bouton en bas à droite permet d'y revenir. */
+   l'outil s'ouvre donc sur un écran d'accueil avec un bouton. Ensuite, un bouton carré
+   au bout de la barre du haut (.topbar-inner) fait passer d'un mode à l'autre. */
 (function () {
   const doc = document.documentElement;
   if (!doc.requestFullscreen || !document.fullscreenEnabled) return;   // ex. dans un cadre qui l'interdit
   const entrer = () => doc.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  const sortir = () => document.exitFullscreen().catch(() => {});
 
   const voile = document.createElement('div');
   voile.className = 'pe-voile';
@@ -1301,27 +1303,39 @@ applyState();
   voile.setAttribute('aria-modal', 'true');
   voile.setAttribute('aria-labelledby', 'peTitre');
   voile.innerHTML = '<div class="pe-boite"><h2 id="peTitre"></h2>'
-    + '<p>L\'outil s\'ouvre en plein écran pour avoir plus de place. Tu peux en sortir à tout moment avec la touche Échap.</p>'
+    + '<p>L’outil s’ouvre en plein écran pour avoir plus de place. Le bouton carré en haut à droite permet d’en sortir ou d’y revenir.</p>'
     + '<button type="button" class="pe-go">⛶ Commencer en plein écran</button>'
     + '<button type="button" class="pe-non">Continuer sans plein écran</button></div>';
   voile.querySelector('h2').textContent = document.title;
 
+  // icônes : quatre coins vers l'extérieur (entrer) ou vers l'intérieur (sortir)
+  const svg = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
+  const ICONE_ENTRER = svg('M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5');
+  const ICONE_SORTIR = svg('M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5');
+
   const bouton = document.createElement('button');
   bouton.type = 'button';
   bouton.className = 'pe-bouton';
-  bouton.textContent = '⛶ Plein écran';
-  bouton.hidden = true;
+  const barre = document.querySelector('.topbar-inner');
+  if (!barre) bouton.classList.add('flottant');
 
-  const maj = () => { bouton.hidden = !!document.fullscreenElement || voile.isConnected; };
-  const fermer = plein => { voile.remove(); if (plein) entrer(); maj(); };
+  const maj = () => {
+    const plein = !!document.fullscreenElement;
+    bouton.innerHTML = plein ? ICONE_SORTIR : ICONE_ENTRER;
+    bouton.title = plein ? 'Quitter le plein écran' : 'Plein écran';
+    bouton.setAttribute('aria-label', bouton.title);
+  };
+  const fermer = plein => { voile.remove(); if (plein) entrer(); };
   voile.querySelector('.pe-go').addEventListener('click', () => fermer(true));
   voile.querySelector('.pe-non').addEventListener('click', () => fermer(false));
   // le clavier reste dans l'écran d'accueil (Entrée ne doit pas déclencher l'outil derrière)
   voile.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') fermer(false); });
-  bouton.addEventListener('click', entrer);
+  bouton.addEventListener('click', () => document.fullscreenElement ? sortir() : entrer());
   document.addEventListener('fullscreenchange', maj);
+  maj();
 
-  document.body.append(voile, bouton);
+  (barre || document.body).append(bouton);
+  document.body.append(voile);
   voile.querySelector('.pe-go').focus();
 })();
 /* @PLEIN-ECRAN:JS fin */
