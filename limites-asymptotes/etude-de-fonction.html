@@ -434,22 +434,12 @@ footer {
   .lane.locked { opacity: 1; filter: none; }
 }
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
-.pe-voile { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
-  padding: 16px; background: rgba(27,42,74,.38); backdrop-filter: blur(3px); }
-.pe-boite { max-width: 440px; background: #fff; border-radius: 14px; border-top: 4px solid #007C74; text-align: center;
-  padding: 28px 30px 22px; box-shadow: 0 2px 4px rgba(27,42,74,.06), 0 16px 40px rgba(27,42,74,.18); }
-.pe-boite h2 { margin: 0 0 8px; font: 700 22px/1.25 var(--ui); color: #1B2A4A; }
-.pe-boite p { margin: 0 0 20px; font-size: 16px; line-height: 1.5; color: #4A5570; }
-.pe-go { font: 700 17px var(--ui); color: #fff; background: #007C74; border: 0; border-radius: 10px; padding: 14px 24px; cursor: pointer; }
-.pe-go:hover { background: #00665F; }
-.pe-non { display: block; margin: 14px auto 0; padding: 6px; font: 500 14px var(--ui); color: #4A5570; background: none; border: 0;
-  text-decoration: underline; cursor: pointer; }
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
   color: #1B2A4A; background: #fff; border: 1.5px solid #D3D2C9; border-radius: 10px; cursor: pointer; }
 .pe-bouton:hover { border-color: #4A5570; }
 .pe-bouton svg { width: 20px; height: 20px; }
 .pe-bouton.flottant { position: fixed; right: 14px; bottom: 14px; z-index: 900; box-shadow: 0 2px 8px rgba(27,42,74,.12); }
-@media print { .pe-voile, .pe-bouton { display: none !important; } }
+@media print { .pe-bouton { display: none !important; } }
 /* @PLEIN-ECRAN:CSS fin */
 </style>
 <style>
@@ -1288,25 +1278,13 @@ applyState();
 </script>
 <script>
 /* @PLEIN-ECRAN:JS début : module partagé, repris par 4eme/src/build.mjs
-   Le navigateur n'autorise le plein écran qu'après un geste de l'élève :
-   l'outil s'ouvre donc sur un écran d'accueil avec un bouton. Ensuite, un bouton carré
-   au bout de la barre du haut (.topbar-inner) fait passer d'un mode à l'autre. */
+   Un bouton carré au bout de la barre du haut (.topbar-inner) fait passer du mode normal
+   au plein écran et inversement (le navigateur exige ce clic de l'élève). */
 (function () {
   const doc = document.documentElement;
   if (!doc.requestFullscreen || !document.fullscreenEnabled) return;   // ex. dans un cadre qui l'interdit
   const entrer = () => doc.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
   const sortir = () => document.exitFullscreen().catch(() => {});
-
-  const voile = document.createElement('div');
-  voile.className = 'pe-voile';
-  voile.setAttribute('role', 'dialog');
-  voile.setAttribute('aria-modal', 'true');
-  voile.setAttribute('aria-labelledby', 'peTitre');
-  voile.innerHTML = '<div class="pe-boite"><h2 id="peTitre"></h2>'
-    + '<p>L’outil s’ouvre en plein écran pour avoir plus de place. Le bouton carré en haut à droite permet d’en sortir ou d’y revenir.</p>'
-    + '<button type="button" class="pe-go">⛶ Commencer en plein écran</button>'
-    + '<button type="button" class="pe-non">Continuer sans plein écran</button></div>';
-  voile.querySelector('h2').textContent = document.title;
 
   // icônes : quatre coins vers l'extérieur (entrer) ou vers l'intérieur (sortir)
   const svg = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
@@ -1325,18 +1303,11 @@ applyState();
     bouton.title = plein ? 'Quitter le plein écran' : 'Plein écran';
     bouton.setAttribute('aria-label', bouton.title);
   };
-  const fermer = plein => { voile.remove(); if (plein) entrer(); };
-  voile.querySelector('.pe-go').addEventListener('click', () => fermer(true));
-  voile.querySelector('.pe-non').addEventListener('click', () => fermer(false));
-  // le clavier reste dans l'écran d'accueil (Entrée ne doit pas déclencher l'outil derrière)
-  voile.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') fermer(false); });
   bouton.addEventListener('click', () => document.fullscreenElement ? sortir() : entrer());
   document.addEventListener('fullscreenchange', maj);
   maj();
 
   (barre || document.body).append(bouton);
-  document.body.append(voile);
-  voile.querySelector('.pe-go').focus();
 })();
 /* @PLEIN-ECRAN:JS fin */
 </script>
