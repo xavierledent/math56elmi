@@ -378,6 +378,21 @@ button, input { font: inherit; }
 .ex-nav .count { font: 600 12px var(--ui); color: var(--ink2); min-width: 72px; text-align: center; }
 .ex-nav .btn { font-size: 12.5px; padding: 7px 12px; }
 .ex-nav .btn.go { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* termes d'une somme à placer sur une ligne du formulaire */
+.r-l { --c: #3B5C76; }
+.expr .bx.terme-ligne { cursor: grab; touch-action: none; }
+.expr .bx.faux { --c: var(--ko); border: .06em solid var(--ko); background: var(--ko-bg); }
+.question:has(.lignes) { display: block; text-align: left; font-size: 16px; padding: 10px 12px 12px; }
+.lignes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ligne { position: relative; border: 1.5px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 8px; cursor: pointer; color: var(--ink); font-size: 17px; min-height: 46px; transition: border-color .2s, background .2s; }
+.ligne:hover, .ligne.survol { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, #fff); }
+.ligne .nb { position: absolute; top: -7px; right: -6px; font: 700 11px/18px var(--ui); min-width: 18px; padding: 0 4px; border-radius: 9px; color: #fff; background: #3B5C76; }
+.fantome { position: fixed; z-index: 100; pointer-events: none; transform: translate(-50%, -60%) scale(1.06); }
+.fantome > .m { display: inline-block; background: #fff; border: 2px solid var(--accent); border-radius: 8px; padding: 2px 10px; font-size: 24px; box-shadow: var(--shadow-lg); }
+.fantome > .puce { box-shadow: var(--shadow-lg); }
+.ligne { min-height: 38px; padding: 3px 6px; font-size: 15.5px; }
+.lignes { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+@media (max-width: 560px) { .lignes { grid-template-columns: 1fr 1fr; } }
 
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
@@ -1187,7 +1202,7 @@ const E = (() => {
   }
   // polynôme → somme ; ordre : exposants décroissants, ou ordre donné
   function fromL(A, ordre) {
-    const ks = ordre ? ordre.filter(k => A.has(k)) : [...A.keys()].sort((u, v) => v - u);
+    const ks = ordre ? [...new Set(ordre)].filter(k => A.has(k)) : [...A.keys()].sort((u, v) => v - u);
     if (!ks.length) return N(0);
     const t = ks.map(k => mono(k, A.get(k)));
     return t.length === 1 ? t[0] : S(...t);
@@ -1641,6 +1656,23 @@ const lin = (A = 5, B = 7) => {
 const lin2 = () => { const a = nz(-4, 4), b = nz(-6, 6); return polyTxt(pick([[[1, 2], [a, 1], [b, 0]], [[nz(-3, 3), 2], [b, 0]], [[a, 1], [nz(-3, 3), 2]]])); };
 const entre = s => `(${s})`;
 
+// Somme avec des termes « déguisés » : 3/x², x/4, x²/2, k√x… (chaque terme se place sur une ligne du formulaire)
+function sommeDeguisee() {
+  const terme = kind => {
+    const a = rnd(2, 6);
+    return {
+      xn: () => (pick([1, a])) + 'x^' + rnd(3, 5), x2: () => a + 'x^2', kx: () => a + 'x',
+      inv: () => a + '/x', invn: () => a + '/x^' + rnd(2, 3), rac: () => pick(['', a]) + 'sqrt(x)',
+      xsur: () => 'x/' + a, x2sur: () => 'x^2/' + a, cst: () => String(rnd(1, 9))
+    }[kind]().replace(/^1x/, 'x');
+  };
+  // pas deux termes de même degré (x² et x²/3, 5x et x/2)
+  const s1 = pick(['xn', 'x2', 'kx']), s3 = pick(['rac', 'xsur', 'x2sur'].filter(s => !(s1 === 'x2' && s === 'x2sur') && !(s1 === 'kx' && s === 'xsur')));
+  const sortes = shuffle([s1, pick(['inv', 'invn', 'invn']), s3]);
+  if (Math.random() < .5) sortes.push('cst');
+  return sortes.map((s, i) => (i === 0 ? (Math.random() < .3 ? '-' : '') : pick(['+', '-'])) + terme(s)).join('');
+}
+
 // Fonctions par niveau de difficulté (1 : une formule ; 2 : morceaux ; 3 : formules emboîtées)
 const GENS = {
   1: [
@@ -1652,6 +1684,8 @@ const GENS = {
     () => `(${lin2()})/(${lin()})`
   ],
   2: [
+    () => sommeDeguisee(),
+    () => sommeDeguisee(),
     () => `${nz(2, 5)}sqrt(x)(${lin()})`,
     () => `(${lin2()})/(${lin2()})`,
     () => `(${lin()})^${rnd(2, 4)}`,
@@ -1699,6 +1733,60 @@ function genFonction(niv) {
    ===================================================================== */
 const OPS_MORCEAUX = ['produit', 'quotient', 'puissance', 'racine', 'inverse'];
 const NOM_OP = { somme: 'Somme', kf: 'k·f', produit: 'Produit', quotient: 'Quotient', puissance: 'Composée uⁿ', inverse: 'Composée 1/u', racine: 'Composée √u', base: 'Formule de base', cst: 'Constante' };
+
+// Lignes du formulaire (formules de base) : pour placer chaque terme d'une somme
+const FR = (a, b) => `<span class="fq pt"><span>${a}</span><span>${b}</span></span>`;
+const RACX = () => E.html(E.R(E.X));
+const LIGNES = [
+  { id: 'cst', lab: 'k', f: '<i>k</i>', d: '0' },
+  { id: 'x', lab: 'x', f: '<i>x</i>', d: '1' },
+  { id: 'kx', lab: 'kx', f: '<i>kx</i>', d: '<i>k</i>' },
+  { id: 'x2', lab: 'x²', f: '<i>x</i><sup>2</sup>', d: '2<i>x</i>' },
+  { id: 'xn', lab: 'xⁿ', f: '<i>x</i><sup><i>n</i></sup>', d: '<i>n</i>·<i>x</i><sup><i>n</i>−1</sup>' },
+  { id: 'inv', lab: '1/x', f: FR(1, '<i>x</i>'), d: FR('−1', '<i>x</i><sup>2</sup>') },
+  { id: 'rac', lab: '√x', f: null, d: null }
+];
+const LIG = id => LIGNES.find(l => l.id === id);
+// terme simple → lignes acceptées (la première est celle de la correction), k et n
+function ligneDe(a) {
+  if (E.isConst(a)) return { ok: ['cst'] };
+  const L = E.toL(a);
+  if (!L) {                                   // k√x
+    const d = decoupe(a);
+    let k = d.k || (a.t === 'p' ? E.toL(E.P(...a.a.filter(E.isConst))).get(0) : F(1));
+    return { ok: ['rac'], k };
+  }
+  const [[n, c]] = [...L], un = c.n === c.d;
+  if (n === 1) return { ok: un ? ['x', 'kx'] : ['kx'], k: c, n };
+  if (n === 2) return { ok: ['x2', 'xn'], k: c, n };
+  if (n === -1) return { ok: ['inv', 'xn'], k: c, n };
+  return { ok: ['xn'], k: c, n };
+}
+// glisser un élément (étiquette, terme) vers une cible ; un simple clic appelle onClic
+function glisserVers(el, fantomeHTML, selCible, onDepot, onClic) {
+  el.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    e.preventDefault(); e.stopPropagation();
+    const x0 = e.clientX, y0 = e.clientY;
+    let fantome = null, survol = null;
+    const cible = ev => { const t = document.elementFromPoint(ev.clientX, ev.clientY); return t && t.closest(selCible); };
+    const bouge = ev => {
+      if (!fantome && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
+      if (!fantome) { fantome = document.createElement('div'); fantome.className = 'fantome'; fantome.innerHTML = fantomeHTML; document.body.appendChild(fantome); }
+      fantome.style.left = ev.clientX + 'px'; fantome.style.top = ev.clientY + 'px';
+      const c = cible(ev);
+      if (c !== survol) { if (survol) survol.classList.remove('survol'); survol = c; if (survol) survol.classList.add('survol'); }
+    };
+    const fin = ev => {
+      removeEventListener('pointermove', bouge); removeEventListener('pointerup', fin); removeEventListener('pointercancel', fin);
+      if (!fantome) { onClic(); return; }
+      fantome.remove(); if (survol) survol.classList.remove('survol');
+      const c = ev.type === 'pointerup' && cible(ev);
+      if (c) onDepot(c);
+    };
+    addEventListener('pointermove', bouge); addEventListener('pointerup', fin); addEventListener('pointercancel', fin);
+  });
+}
 
 // Fenêtre « Exercice du cours » : les fonctions des banques A et B (commune aux onglets)
 function choixBanque(zone, onChoix) {
@@ -1841,12 +1929,15 @@ register({
       (function visite(T) {
         ph.push({ type: 'op', T });
         if (lv >= 2 && OPS_MORCEAUX.includes(T.d.op)) ph.push({ type: 'pieces', T });
+        if (lv >= 2 && !T.parent && T.d.op === 'somme' && termesBase(T).length) ph.push({ type: 'lignes', T });
         if (lv >= 3) T.kids.forEach(k => { if (aDecouper(k)) visite(k); });
       })(T);
       return ph;
     }
+    // termes d'une somme qui sont des formules de base (ou k × formule de base, ou constantes)
+    const termesBase = T => T.kids.filter(k => !k.kids.length && ['base', 'kf', 'cst'].includes(k.d.op));
     function reset() {
-      st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {}, roleSur: {} };
+      st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {}, ligne: {}, selT: null, faux: null };
       dessiner();
     }
     const phase = () => q.phases[st.i];
@@ -1871,12 +1962,24 @@ register({
           let n = 0; for (let p = T.parent; p; p = p.parent) if (etiquette(p)) n++;
           if (n) m.cls += ' lab-d' + Math.min(n, 3);
         }
+        if (ph && ph.type === 'lignes' && termesBase(ph.T).includes(T)) {
+          m.cls += ' cible terme-ligne';
+          if (st.selT === T.id) m.cls += ' choisissable';
+          if (st.faux === T.id) m.cls += ' faux';
+        }
+        if (st.ligne[T.id]) { m.lab = LIG(st.ligne[T.id]).lab; m.cls += ' r-l'; }
         if (ph && ph.T === T && ph.type === 'op') m.cls += ' courant';
         if (st.sel && ph && ph.type === 'pieces' && T.parent === ph.T) m.cls += ' choisissable';
         if (m.cls || m.op || m.lab || (lv === 0 && !T.parent)) marks.set(T.node, m);
       }
       elExpr.innerHTML = E.mathMarks(q.T.node, marks);
       requestAnimationFrame(() => ajuste(elExpr));
+      // termes à glisser sur une ligne du formulaire
+      elExpr.querySelectorAll('.bx.terme-ligne').forEach(b => {
+        const T = q.tous.find(t => t.id === b.dataset.id);
+        glisserVers(b, `<span class="m">${E.math(T.node)}</span>`, '.question .ligne',
+          c => placerTerme(T, c.dataset.l), () => { st.selT = st.selT === T.id ? null : T.id; dessiner(); });
+      });
       // formules déjà trouvées, dans l'ordre
       elVues.innerHTML = q.tous.filter(T => st.ouverts.has(T.id)).map(T => ligneFormule(T)).join('');
       elDefis.innerHTML = '';
@@ -1927,6 +2030,21 @@ register({
       if (lv === 0) { ctx.q.innerHTML = `<span class="qf">${E.math(E.parse(q.src))}</span>`; return; }
       if (st.fini) { ctx.q.innerHTML = `<p class="qtitre">Formules trouvées ✓</p><p class="qhint">Elles sont écrites sous la fonction. Passe à une autre question !</p>`; return; }
       const ph = phase();
+      if (ph.type === 'lignes') {
+        const ts = termesBase(ph.T);
+        ctx.q.innerHTML = `<p class="qtitre">Sur quelle ligne du formulaire va chaque terme ?</p><div class="lignes">`
+          + LIGNES.map(l => {
+            const n = ts.filter(t => st.ligne[t.id] === l.id).length;
+            const f = l.f || RACX(), d = l.d || FR(1, '2' + RACX());
+            return `<button class="ligne" data-l="${l.id}"><span class="m">(${f})′ = ${d}</span>${n ? `<span class="nb">${n}</span>` : ''}</button>`;
+          }).join('')
+          + '</div><p class="qhint">Glisse chaque terme sur sa ligne (ou clique sur le terme, puis sur la ligne).</p>';
+        ctx.q.querySelectorAll('.ligne').forEach(b => b.onclick = () => {
+          const T = q.tous.find(t => t.id === st.selT);
+          if (T) placerTerme(T, b.dataset.l);
+        });
+        return;
+      }
       if (ph.type === 'op') {
         const quoi = ph.T.parent ? `Pour dériver <span class="qui r-${ph.T.role}">${ph.T.role === 'terme' ? 'ce terme' : ph.T.role}</span>, quelle formule ?` : 'Quelle formule en premier ?';
         const ops = ORDRE_FORMULES.filter(o => q.comp || !FORMULES[o].comp);
@@ -1938,43 +2056,27 @@ register({
         ctx.q.innerHTML = `<p class="qtitre">Place ${roles.length > 1 ? 'les étiquettes' : 'l’étiquette'} sur ${roles.length > 1 ? 'les morceaux' : 'le morceau'} :</p><div class="puces">`
           + roles.map(r => `<button class="puce r-${r}${st.sel === r ? ' on' : ''}${Object.values(st.lab).includes(r) && ph.T.kids.some(k => st.lab[k.id] === r) ? ' place' : ''}" data-r="${r}">${r}</button>`).join('')
           + '</div><p class="qhint">Fais glisser chaque étiquette sur son morceau (ou clique sur l’étiquette, puis sur le morceau).</p>';
-        ctx.q.querySelectorAll('.puce').forEach(glisser);
+        ctx.q.querySelectorAll('.puce').forEach(b => {
+          const r = b.dataset.r;
+          glisserVers(b, `<span class="puce r-${r}">${r}</span>`, '.expr .bx.cible',
+            c => poser(q.tous.find(t => t.id === c.dataset.id), r), () => { st.sel = st.sel === r ? null : r; dessiner(); });
+        });
       }
     }
     // étiquettes à placer : f et g (produit, quotient), u (composées) ; g pour 1/u traité en quotient
     const rolesDe = ph => ph.T.d.pieces.map(p => p.role);
 
-    // étiquette : un clic la sélectionne ; on peut aussi la faire glisser sur un morceau (souris, pavé, doigt)
-    function glisser(b) {
-      const r = b.dataset.r;
-      b.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        const x0 = e.clientX, y0 = e.clientY;
-        let fantome = null, survol = null;
-        const cible = ev => { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest('.expr .bx.cible'); };
-        const bouge = ev => {
-          if (!fantome && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
-          if (!fantome) { fantome = b.cloneNode(true); fantome.classList.add('fantome'); document.body.appendChild(fantome); }
-          fantome.style.left = ev.clientX + 'px'; fantome.style.top = ev.clientY + 'px';
-          const c = cible(ev);
-          if (c !== survol) { if (survol) survol.classList.remove('survol'); survol = c; if (survol) survol.classList.add('survol'); }
-        };
-        const fin = ev => {
-          removeEventListener('pointermove', bouge); removeEventListener('pointerup', fin); removeEventListener('pointercancel', fin);
-          if (!fantome) { st.sel = st.sel === r ? null : r; dessiner(); return; }
-          fantome.remove(); if (survol) survol.classList.remove('survol');
-          const c = ev.type === 'pointerup' && cible(ev);
-          if (c) poser(q.tous.find(t => t.id === c.dataset.id), r);
-        };
-        addEventListener('pointermove', bouge); addEventListener('pointerup', fin); addEventListener('pointercancel', fin);
-      });
-    }
     // clic sur un morceau : on y pose l'étiquette sélectionnée (ou la suivante)
     elExpr.addEventListener('click', e => {
       const bx = e.target.closest('.bx.cible');
-      if (!bx || App.sol) return;
+      if (!bx || App.sol || bx.classList.contains('terme-ligne')) return;
       poser(q.tous.find(t => t.id === bx.dataset.id));
     });
+    function placerTerme(T, l) {
+      st.ligne[T.id] = l; st.selT = null; st.faux = null;
+      ctx.changed();
+      dessiner();
+    }
     function poser(T, rChoisi) {
       const ph = phase();
       if (!ph || ph.type !== 'pieces' || T.parent !== ph.T) return;
@@ -2010,6 +2112,14 @@ register({
         valideOp(ph, st.choix);
         return suite(`C’est bien ${article(st.choix)}.`);
       }
+      if (ph.type === 'lignes') {
+        const ts = termesBase(ph.T);
+        if (ts.some(t => !st.ligne[t.id])) return { ok: false, empty: true, msg: 'Place chaque terme sur une ligne du formulaire.' };
+        const faux = ts.find(t => !ligneDe(t.src).ok.includes(st.ligne[t.id]));
+        if (faux) { st.faux = faux.id; dessiner(); return { ok: false, msg: pisteLigne(faux) }; }
+        ts.forEach(t => st.ouverts.add(t.id));
+        return suite('Chaque terme est sur la bonne ligne.');
+      }
       const roles = rolesDe(ph), kids = ph.T.kids;
       if (roles.some(r => !kids.some(k => st.lab[k.id] === r))) return { ok: false, empty: true, msg: 'Place chaque étiquette sur un morceau.' };
       const juste = kids.every((k, i) => {
@@ -2043,6 +2153,15 @@ register({
       if (op === 'kf' && T.src.t === 'q') return 'On divise par un <b>nombre</b> : c’est un nombre × une fonction (diviser par 2, c’est multiplier par ½).';
       return 'Ce n’est pas la formule à appliquer en premier. Regarde comment sont reliés les <b>grands morceaux</b> de la fonction : par + ou −, par ×, par une barre de fraction, par une puissance, par une racine ? (💡 L’indice les encadre.)';
     }
+    function pisteLigne(T) {
+      const a = T.src, li = ligneDe(a), mis = st.ligne[T.id], t = E.math(T.node);
+      if (li.ok[0] === 'cst') return `${t} est une constante : il n’y a pas de <i>x</i>.`;
+      if (li.ok[0] === 'rac') return `Dans ${t}, il y a une racine : quelle ligne contient √<i>x</i> ?`;
+      if (mis === 'inv' && li.n !== -1) return `${t} n’est pas « nombre × 1/<i>x</i> » : 1/<i>x</i>${li.n < -1 ? '<sup>' + (-li.n) + '</sup>' : ''} s’écrit avec un exposant <b>négatif</b>.`;
+      if (li.n < 0) return `Réécris ${t} avec un exposant négatif : 1/<i>x</i><sup>${-li.n}</sup> = <i>x</i><sup>−${-li.n}</sup>.`;
+      if (li.n === 1) return `Dans ${t}, <i>x</i> n’a pas d’exposant : le nombre devant <i>x</i>, c’est <i>k</i>.`;
+      return `Écris ${t} sous la forme « nombre × … » : le nombre, c’est <i>k</i> ; regarde l’exposant de <i>x</i>.`;
+    }
     function pistePieces(ph) {
       const op = st.opDe[ph.T.id] || ph.T.d.op;
       if (op === 'quotient') return '<i>f</i> est en haut (le numérateur), <i>g</i> en bas (le dénominateur).';
@@ -2056,6 +2175,7 @@ register({
         if (!n) return 'Cette fonction est simple : regarde le formulaire, lignes « formules de base » et « opérations ».';
         return `Voici ${n > 1 ? 'les grands morceaux' : 'le grand morceau'} de la fonction (encadré${n > 1 ? 's' : ''}). Comment ${n > 1 ? 'sont-ils reliés' : 'est-il « emballé »'} : par + ou −, par ×, par une barre de fraction, par une puissance, par une racine ?`;
       }
+      if (ph.type === 'lignes') return 'Écris chaque terme sous la forme « nombre × … » : le nombre, c’est <i>k</i>, et ce qui reste doit être une ligne du formulaire. Attention : 1/<i>x</i><sup>2</sup> = <i>x</i><sup>−2</sup>, et <i>x</i>/3 = ⅓·<i>x</i>.';
       return pistePieces(ph);
     }
 
@@ -2076,6 +2196,17 @@ register({
               await wait(700);
             }
           });
+        } else if (ph.type === 'lignes') {
+          const ts = termesBase(T);
+          steps.push({
+            say: 'Chaque terme s’écrit « nombre × ligne du formulaire » : le nombre, c’est <i>k</i>.',
+            write: ts.map(explique).join(' &nbsp;·&nbsp; '),
+            run: async () => {
+              for (const t of ts) { st.ligne[t.id] = ligneDe(t.src).ok[0]; dessiner(); await wait(450); }
+              ts.forEach(t => st.ouverts.add(t.id));
+              finPhase(j);
+            }
+          });
         } else {
           const roles = rolesDe(ph);
           steps.push({
@@ -2090,6 +2221,14 @@ register({
         }
       });
       return { reset() { reset(); return {}; }, steps };
+    }
+    // « 3/x² = 3·x⁻² : ligne xⁿ »
+    function explique(T) {
+      const li = ligneDe(T.src), l = LIG(li.ok[0]), t = E.math(T.node);
+      let r = '';
+      if (li.n !== undefined && li.n < -1) r = ` = ${fracHTML(li.k)}·<i>x</i><sup>${numStr(li.n)}</sup>`;
+      else if (li.n === -1 && li.k.n !== li.k.d) r = ` = ${fracHTML(li.k)}·${FR(1, '<i>x</i>')}`;
+      return `${t}${r} : ligne <b>${l.lab}</b>`;
     }
     function finPhase(j) {
       st.choix = null; st.sel = null;
@@ -2120,7 +2259,7 @@ register({
       check() { return lv === 0 ? null : check(); },
       hint,
       solve,
-      edited() {},
+      edited() { if (st && st.faux) { st.faux = null; dessiner(); } },
       debug: () => ({ q, st })
     };
   }
