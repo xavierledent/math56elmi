@@ -42,6 +42,15 @@ a.fiche:hover .etat{box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 35%,tr
 .bientot b{color:var(--ink2)}
 .bientot .etat{font:italic 400 15px var(--serif);color:var(--ink2)}
 a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.onglets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0 64px;font:500 14px var(--ui);color:var(--ink2)}
+.onglets a{font:600 14px var(--ui);color:var(--c);background:#fff;border:1.5px solid var(--c);border-radius:999px;
+  padding:5px 12px;text-decoration:none}
+.onglets a:hover{background:var(--c);color:#fff}
+.reprendre{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;background:#fff;border:1.5px dashed var(--ink2);
+  border-radius:8px;font:500 15px var(--ui);color:var(--ink2)}
+.reprendre[hidden]{display:none}
+.reprendre a{margin-left:auto;font:700 15px var(--ui);color:#fff;background:var(--ink);padding:9px 16px;border-radius:10px;text-decoration:none;white-space:nowrap}
+.reprendre b{color:var(--ink)}
 @media(max-width:560px){
   body::before{left:14px}
   header{padding:8px 14px 8px 28px}
@@ -50,5 +59,7 @@ a:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
   .fiche{gap:14px;padding:14px 16px;flex-wrap:wrap}
   .texte{flex-basis:calc(100% - 58px)}
   .etat{margin-left:58px}
+  .onglets{margin-left:0}
+  .reprendre a{margin-left:0}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
