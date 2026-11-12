@@ -18,7 +18,7 @@
 <div class="reprendre" id="reprendre" hidden></div>
 <script>
 (function () {
-  var connus = {"limites-asymptotes/etude-de-fonction.html":"Chapitre 1"}, d = null;
+  var connus = {"limites-asymptotes/etude-de-fonction.html":"Chapitre 1","derivees/derivees.html":"Chapitre 2"}, d = null;
   try { d = JSON.parse(localStorage.getItem("site-56elmi.dernier")); } catch (e) {}
   if (!d || !connus[d.href]) return;
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -33,6 +33,9 @@
 <ul class="liste" aria-label="Chapitres">
 <li><a class="fiche" style="--accent:#007C74;--bg:#EAF5F3" href="limites-asymptotes/index.html"><span class="rond">1</span>
     <span class="texte"><b>Limites et asymptotes</b><span>Étude complète d'une fonction : domaine, asymptotes, limites, racines et graphique.</span></span>
+    <span class="etat">1 outil →</span></a></li>
+<li><a class="fiche" style="--accent:#A00058;--bg:#F9EDF3" href="derivees/index.html"><span class="rond">2</span>
+    <span class="texte"><b>Dérivées</b><span>Nombre dérivé, fonction dérivée et formules de dérivation, tangente, croissance et extremums.</span></span>
     <span class="etat">1 outil →</span></a></li>
 </ul>
 </main>
