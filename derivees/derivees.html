@@ -427,6 +427,17 @@ button, input { font: inherit; }
 .tuile.on { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--c); }
 .fantome > .tuile { display: inline-flex; box-shadow: var(--shadow-lg); }
 
+
+/* ---------- indicateur des quatre étapes ---------- */
+.etapes { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; justify-content: center; align-items: center; }
+.etapes li { font: 600 11.5px var(--ui); color: var(--ink3); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; background: #fff; white-space: nowrap; }
+.etapes li b { margin-right: 4px; }
+.etapes li.fait { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); }
+.etapes li.fait b::before { content: "✓"; }
+.etapes li.fait b span { display: none; }
+.etapes li.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (max-width: 560px) { .etapes li { font-size: 10.5px; padding: 3px 7px; } }
+
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
   color: #1B2A4A; background: #fff; border: 1.5px solid #D3D2C9; border-radius: 10px; cursor: pointer; }
@@ -473,7 +484,7 @@ a.sous-titre-site:hover{text-decoration:underline}
       <a class="logo-site" href="../index.html" title="Accueil du site : tous les chapitres"><img src="data:image/png;base64,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" alt="Collège Notre-Dame, Dinant"></a>
       <div>
         <h1>Dériver avec les formules</h1>
-        <p><a class="sous-titre-site" href="index.html">Chapitre 2 : Dérivées · CNDD (5-6 TQE)</a></p>
+        <p><a class="sous-titre-site" href="index.html">Chapitre 2 : Dérivées · CNDD (5e-6e)</a></p>
       </div>
     </div>
     <nav class="tabs" id="tabs" aria-label="Exercices"></nav>
@@ -679,240 +690,6 @@ function slide(a, p1, ms = 650) {
   return tween(ms, t => { const p = lerp(p0, p1, t); a.set(p, add(p, d)); });
 }
 
-/* ---------- quadrillage (exercices 3 et 5) ---------- */
-// coordonnées modèle : x vers la droite, y vers le haut
-function makeGrid(svg, cols, rows, cell = 32, pad = 26) {
-  const W = cols * cell + 2 * pad, H = rows * cell + 2 * pad;
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const g = svgEl('g', {}, svg);
-  for (let i = 0; i <= cols; i++) svgEl('line', { class: 'gl', x1: pad + i * cell, y1: pad, x2: pad + i * cell, y2: pad + rows * cell }, g);
-  for (let j = 0; j <= rows; j++) svgEl('line', { class: 'gl', x1: pad, y1: pad + j * cell, x2: pad + cols * cell, y2: pad + j * cell }, g);
-  const px = m => [pad + m[0] * cell, pad + (rows - m[1]) * cell];
-  const node = m => ({ key: m[0] + ',' + m[1], m, px: px(m) });
-  const snap = ([X, Y]) => {
-    const x = Math.max(0, Math.min(cols, Math.round((X - pad) / cell)));
-    const y = Math.max(0, Math.min(rows, Math.round(rows - (Y - pad) / cell)));
-    return node([x, y]);
-  };
-  const inside = m => m[0] >= 0 && m[0] <= cols && m[1] >= 0 && m[1] <= rows;
-  return { W, H, px, node, snap, inside, cols, rows, cell };
-}
-// Points nommés au hasard, bien espacés
-function randomPoints(names, x0, x1, y0, y1, gap = 2) {
-  for (;;) {
-    const P = {}; let ok = true;
-    for (const n of names) {
-      let tries = 0, p;
-      do { p = [rnd(x0, x1), rnd(y0, y1)]; tries++; }
-      while (tries < 200 && Object.values(P).some(q => Math.max(Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])) < gap));
-      if (tries >= 200) { ok = false; break; }
-      P[n] = p;
-    }
-    if (ok) return P;
-  }
-}
-const comp = (P, t) => sub(P[t.b], P[t.a]);                       // composantes de AB
-const combo = (P, terms) => terms.reduce((s, t) => add(s, scl(fval(t.k), comp(P, t))), [0, 0]);
-// décalages successifs d'une chaîne de termes (pour savoir si elle tient dans le quadrillage)
-function chainOffsets(P, terms) {
-  const o = [[0, 0]]; let c = [0, 0];
-  for (const t of terms) { c = add(c, scl(fval(t.k), comp(P, t))); o.push(c); }
-  return o;
-}
-function fitStart(G, P, terms, prefer) {
-  const o = chainOffsets(P, terms);
-  const fits = s => o.every(d => G.inside(add(s, d)));
-  if (prefer && fits(prefer)) return prefer;
-  const used = Object.values(P).map(p => p.join());
-  let best = null, bd = Infinity;
-  for (let x = 0; x <= G.cols; x++) for (let y = 0; y <= G.rows; y++) {
-    const s = [x, y]; if (!fits(s)) continue;
-    const ends = o.map(d => add(s, d));
-    const mid = ends.reduce((a, b) => add(a, b), [0, 0]).map(v => v / ends.length);
-    const d = Math.hypot(mid[0] - G.cols / 2, mid[1] - G.rows / 2) + (used.includes(s.join()) ? 3 : 0);
-    if (d < bd) { bd = d; best = s; }
-  }
-  return best || [0, 0];
-}
-const CHAIN_COLORS = ['#3B5C76', '#A00058', '#007C74', '#EC6708'];
-// Correction pas à pas sur le quadrillage : une étape par vecteur, puis le résultat
-// o : { intro, introWrite, endSay, endWrite, onEnd }
-function gridSteps(G, L, P, terms, start, o) {
-  const plan = [];
-  let cur = start;
-  terms.forEach((t, i) => {
-    const d = comp(P, t), pts = [cur];
-    if (t.k.d === 1) for (let r = 0; r < Math.abs(t.k.n); r++) { cur = add(cur, scl(Math.sign(t.k.n), d)); pts.push(cur); }
-    else { cur = add(cur, scl(fval(t.k), d)); pts.push(cur); }
-    plan.push({ t, d, pts, col: CHAIN_COLORS[i % 4] });
-  });
-  const end = cur, steps = [];
-  steps.push({
-    say: o.intro, write: o.introWrite,
-    run: async () => {
-      const p = G.px(start);
-      svgEl('circle', { class: 'origin-pulse', cx: p[0], cy: p[1], r: 10 }, L.top);
-      svgEl('circle', { cx: p[0], cy: p[1], r: 5, fill: '#C2410C' }, L.top);
-      await wait(700);
-    }
-  });
-  plan.forEach(({ t, d, pts, col }, i) => {
-    const name = vec(t.a + t.b), a = Math.abs(t.k.n), neg = t.k.n < 0, kd = scl(fval(t.k), d);
-    const where = i ? 'au bout du vecteur précédent' : 'à partir du point de départ';
-    let say;
-    if (t.k.d !== 1) say = `${fracHTML(F(a, t.k.d))} ${name} : on partage ${name} en ${t.k.d} parts égales et on en prend ${a}${neg ? ', dans le sens contraire' : ''}, ${where}.`;
-    else if (a > 1) say = `${a} ${name} : on reporte ${name} ${a} fois bout à bout${neg ? ', dans le sens contraire' : ''}, ${where}.`;
-    else if (neg) say = `${MINUS}${name} : c’est ${name} dans l’autre sens, donc ${vec(t.b + t.a)}. On le reporte ${where}.`;
-    else say = `On reporte ${name} ${where}.`;
-    say += ` <span class="sub">(${name} : ${moveWords(d)})</span>`;
-    steps.push({
-      say, write: `${coefHTML(t.k)}${name} ${cv(kd[0], kd[1])}`,
-      run: async () => {
-        const box = svgEl('g', {}, L.ghost);      // aide temporaire : le vecteur de l'énoncé en pointillés
-        arrow(box, G.px(P[t.a]), G.px(P[t.b]), { color: col, cls: 'ghost', w: 2.4 });
-        if (t.k.d !== 1) {          // le vecteur entier, partagé en parts égales
-          const s0 = pts[0], full = add(s0, scl(neg ? -1 : 1, d));
-          arrow(box, G.px(s0), G.px(full), { color: col, cls: 'ghost', w: 2 });
-          for (let j = 1; j < t.k.d; j++) { const m = G.px(lerp(s0, full, j / t.k.d)); svgEl('circle', { cx: m[0], cy: m[1], r: 3.5, fill: col }, box); }
-        }
-        await wait(450);
-        for (let j = 1; j < pts.length; j++) {
-          const p0 = G.px(pts[j - 1]);
-          await grow(arrow(L.main, p0, p0, { color: col, w: 3 }), p0, G.px(pts[j]), 900);
-        }
-        await fadeOut(box);
-      }
-    });
-  });
-  steps.push({
-    say: o.endSay, write: o.endWrite,
-    run: async S => {
-      const p0 = G.px(start);
-      await grow(arrow(L.top, p0, p0, { cls: 'res', w: 3.8 }), p0, G.px(end), 1100);
-      if (o.onEnd) o.onEnd(S);
-    }
-  });
-  return steps;
-}
-// Nœud le plus proche de pref à partir duquel tous les décalages offs restent dans le quadrillage
-function nearestFit(G, pref, offs) {
-  let best = null, bd = Infinity;
-  for (let x = 0; x <= G.cols; x++) for (let y = 0; y <= G.rows; y++) {
-    const s = [x, y];
-    if (!offs.every(o => G.inside(add(s, o)))) continue;
-    const d = Math.hypot(x - pref[0], y - pref[1]);
-    if (d < bd) { bd = d; best = s; }
-  }
-  return best;
-}
-// Plan « on dessine chaque vecteur à sa place, puis on les met bout à bout » (Tracer).
-// L'opposé est dessiné directement dans l'autre sens (−BF part de F), un multiple directement à sa longueur.
-// ok : la construction tient dans le quadrillage en partant de la première lettre
-function drawJoinPlan(G, P, terms) {
-  const items = terms.map((t, i) => {
-    const v = comp(P, t), neg = t.k.n < 0, kd = scl(fval(t.k), v), home = P[neg ? t.b : t.a];
-    const from = G.inside(add(home, kd)) ? home : nearestFit(G, home, [[0, 0], kd]);
-    return { t, i, v, kd, neg, home, from, col: CHAIN_COLORS[i % 4] };
-  });
-  if (items.some(it => !it.from)) return { ok: false };
-  // on part du premier vecteur ; on range les autres pour en déplacer le moins possible
-  const first = items[0];
-  let best = null, natural = null;
-  permutations(items.slice(1)).forEach((rest, oi) => {
-    const order = [first].concat(rest);
-    let pt = first.from, moved = 0, fits = true;
-    for (const it of order) { if (!same(it.from, pt)) moved++; pt = add(pt, it.kd); if (!G.inside(pt)) fits = false; }
-    const score = (fits ? 0 : 1000) + moved * 3 + (oi ? 1 : 0), cand = { score, order, fits, moved, reordered: oi > 0 };
-    if (!oi) natural = cand;
-    if (!best || score < best.score) best = cand;
-  });
-  // pourquoi change-t-on l'ordre ? pour déplacer moins de vecteurs, ou pour rester dans le quadrillage
-  const why = best.reordered && natural.fits && best.moved < natural.moved ? 'suivent' : 'place';
-  return { ok: best.fits && same(first.from, first.home), items, order: best.order, reordered: best.reordered, why, start: first.from };
-}
-// Correction pas à pas de « Tracer » : un vecteur dessiné par étape, puis on les met bout à bout, puis le résultat
-function gridDrawJoin(G, L, P, terms, o) {
-  const plan = drawJoinPlan(G, P, terms), steps = [];
-  plan.items.forEach(it => {
-    const { t, v, kd, neg } = it, name = vec(t.a + t.b), a = Math.abs(t.k.n);
-    let say;
-    if (t.k.d !== 1) say = `${fracHTML(F(a, t.k.d))} ${name} : on partage ${name} en ${t.k.d} parts égales et on en prend ${a}${neg ? ', dans l’autre sens' : ''}.`;
-    else if (a > 1) say = `${a} ${name} : un vecteur ${a} fois plus long que ${name}, ${neg ? 'dans l’autre sens' : 'dans le même sens'}.`;
-    else if (neg) say = `${MINUS}${name} = ${vec(t.b + t.a)} : on le trace directement dans l’autre sens.`;
-    else say = `On dessine ${name}.`;
-    say += ` <span class="sub">(${name} : ${moveWords(v)})</span>`;
-    steps.push({
-      say, write: `${coefHTML(t.k)}${name} ${cv(kd[0], kd[1])}`,
-      run: async S => {
-        // aide temporaire : le vecteur de l'énoncé en pointillés (sauf s'il est dessiné tel quel à sa place)
-        const box = svgEl('g', {}, L.ghost);
-        if (!(t.k.n === 1 && t.k.d === 1 && same(it.from, P[t.a]))) arrow(box, G.px(P[t.a]), G.px(P[t.b]), { color: it.col, cls: 'ghost', w: 2.4 });
-        if (t.k.d !== 1) {          // le vecteur entier, partagé en parts égales
-          const full = add(it.from, scl(neg ? -1 : 1, v));
-          arrow(box, G.px(it.from), G.px(full), { color: it.col, cls: 'ghost', w: 2 });
-          for (let j = 1; j < t.k.d; j++) { const m = G.px(lerp(it.from, full, j / t.k.d)); svgEl('circle', { cx: m[0], cy: m[1], r: 3.5, fill: it.col }, box); }
-        }
-        await wait(400);
-        const p0 = G.px(it.from);
-        S.arr[it.i] = arrow(L.main, p0, p0, { color: it.col, w: 3 });
-        await grow(S.arr[it.i], p0, G.px(add(it.from, kd)), 1000);
-        await fadeOut(box);
-      }
-    });
-  });
-  if (plan.reordered) steps.push({
-    say: 'Dans une somme, on peut changer l’ordre des vecteurs : ' + (plan.why === 'suivent'
-      ? 'on prend d’abord ceux qui se suivent déjà.' : 'on les range pour que la construction tienne dans le quadrillage.'),
-    write: '= ' + termsHTML(plan.order.map(it => it.t)),
-    run: () => wait(600)
-  });
-  // bout à bout : on ne déplace que les vecteurs qui ne se suivent pas déjà
-  let pt = plan.start;
-  plan.order.forEach((it, j) => {
-    if (!same(it.from, pt)) {
-      const target = pt, lbl = coefHTML(it.t.k) + vec(it.t.a + it.t.b);
-      steps.push({
-        say: j === 0 ? `On déplace ${lbl} pour que la construction tienne dans le quadrillage (c’est un vecteur égal).`
-          : `On fait glisser ${lbl} au bout du vecteur précédent : c’est un vecteur égal.`,
-        write: null,
-        run: async S => {
-          const a = S.arr[it.i], box = svgEl('g', {}, L.ghost);
-          arrow(box, a.p, a.q, { color: it.col, cls: 'ghost', w: 2 });
-          await wait(300);
-          await slide(a, G.px(target), 1500);
-          await fadeOut(box);
-        }
-      });
-    }
-    pt = add(pt, it.kd);
-  });
-  const end = pt;
-  steps.push({
-    say: o.endSay, write: o.endWrite,
-    run: async S => {
-      Object.values(S.arr).forEach(a => { a.g.style.opacity = .3; });
-      const p0 = G.px(plan.start);
-      await grow(arrow(L.top, p0, p0, { cls: 'res', w: 3.8 }), p0, G.px(end), 1100);
-    }
-  });
-  return steps;
-}
-// Explication par composantes : « 2BF + CE = 2(..) + (..) = (..) »
-function compExplain(P, terms, dec) {
-  const list = terms.map(t => { const c = comp(P, t); return `${vec(t.a + t.b)} ${cv(c[0], c[1])}`; }).join(' &nbsp; ');
-  const mid = terms.map((t, i) => {
-    const c = comp(P, t), neg = t.k.n < 0, abs = F(Math.abs(t.k.n), t.k.d);
-    const sign = i === 0 ? (neg ? MINUS : '') : ` ${neg ? MINUS : '+'} `;
-    return sign + (abs.n === abs.d ? '' : fracHTML(abs, dec)) + cv(c[0], c[1]);
-  }).join('');
-  const r = combo(P, terms);
-  return { list, line: `${termsHTML(terms, dec)} = ${mid} = ${cv(r[0], r[1])}` };
-}
-function moveWords(d) {
-  const h = d[0] ? `${Math.abs(d[0])} vers la ${d[0] > 0 ? 'droite' : 'gauche'}` : '';
-  const v = d[1] ? `${Math.abs(d[1])} vers le ${d[1] > 0 ? 'haut' : 'bas'}` : '';
-  return [h, v].filter(Boolean).join(' et ');
-}
 
 /* =====================================================================
    Coquille de l'application
@@ -974,6 +751,7 @@ function startLevel(lv) {
     $('levels').appendChild(b);
   });
   document.body.classList.toggle('mode-explorer', lv === 0);
+  $('levels').style.display = m.levels.length > 1 ? '' : 'none';   // un seul niveau : pas de sélecteur
   $('consigne').innerHTML = m.consigne(lv);
   const nl = m.newLabel ? m.newLabel(lv) : '⟳ Nouvelle figure';
   $('bNew').style.display = nl ? '' : 'none';
@@ -1085,6 +863,7 @@ function boot(key) {
   if (h.get('niv') && h.get('ex')) App.level[h.get('ex')] = Math.min(3, Math.max(0, +h.get('niv') || 0));
   openEx(h.get('ex') || storeGet(App.key + '.ex', EXS[0].id));
 }
+
 
 'use strict';
 /* =====================================================================
@@ -1578,6 +1357,7 @@ const E = (() => {
   return { parse, ev, D: avec(D), brut: avec(brut), etapes: avec(etapes), H, Pd, fromL, Lder, ordreDe, sommeMonomes, html, math, mathMarks, copie, clean, toL, isConst, monome, hasRootX, coupeProduit, splitSign, eq, N, X, S, P, Q, W, R, G };
 })();
 
+
 'use strict';
 /* Banques d'exercices du chapitre 2 (Dérivées, 5e-6e TQ) : banque A (p. 11-12) et banque B (p. 17).
    Écriture : x^2, sqrt(…), / ; multiplication implicite. */
@@ -1599,6 +1379,7 @@ const BANQUES = {
      '(2x-1)^3(x+2)^2', '(x-1)^2 sqrt(x)', '(2x+1)/sqrt(x^2+1)']
   ]
 };
+
 
 'use strict';
 /* =====================================================================
@@ -1755,60 +1536,6 @@ function sommeDeguisee() {
   return sortes.map((s, i) => (i === 0 ? (Math.random() < .3 ? '-' : '') : pick(['+', '-'])) + terme(s)).join('');
 }
 
-// Fonctions par niveau de difficulté (1 : une formule ; 2 : morceaux ; 3 : formules emboîtées)
-const GENS = {
-  1: [
-    () => polyTxt(shuffle([[nz(-5, 5), rnd(2, 4)], [nz(-6, 6), 1], [nz(-9, 9), 0]]).slice(0, rnd(2, 3)).concat(Math.random() < .5 ? [[nz(-4, 4), pick([-1, 0.5])]] : [])),
-    () => polyTxt([[nz(-5, 5), rnd(2, 4)], [nz(-4, 4), pick([-1, 0.5])], [nz(-9, 9), 0]]),
-    () => entre(lin()) + entre(lin()),
-    () => entre(lin2()) + entre(lin()),
-    () => { let a, b, c, d; do { a = nz(-5, 5); b = nz(-7, 7); c = nz(-5, 5); d = nz(-7, 7); } while (a * d === b * c); return `(${polyTxt([[a, 1], [b, 0]])})/(${polyTxt([[c, 1], [d, 0]])})`; },
-    () => `(${lin2()})/(${lin()})`
-  ],
-  2: [
-    () => sommeDeguisee(),
-    () => sommeDeguisee(),
-    () => `${nz(2, 5)}sqrt(x)(${lin()})`,
-    () => `(${lin2()})/(${lin2()})`,
-    () => `(${lin()})^${rnd(2, 4)}`,
-    () => `(${lin2()})^${rnd(2, 3)}`,
-    () => `sqrt(${lin()})`,
-    () => `sqrt(${lin2()})`,
-    () => `${nz(1, 7)}/(${lin()})`,
-    () => entre(polyTxt([[1, rnd(2, 4)], [nz(-5, 5), 0]])) + entre(lin())
-  ],
-  3: [
-    () => `sqrt(x)/(${lin()})`,
-    () => `(${lin()})/sqrt(x)`,
-    () => `x^${rnd(2, 4)}(${lin()})^${rnd(2, 3)}`,
-    () => `(${lin()})^${rnd(2, 3)}(${lin()})^2`,
-    () => `x sqrt(${lin2()})`,
-    () => `(${lin()})/sqrt(${lin2()})`,
-    () => `x+(${lin2()})/(${lin2()})`,
-    () => `((${lin()})/(${lin()}))^2`,
-    () => `(1+${nz(1, 3)}/x)^${rnd(2, 3)}`,
-    () => `${nz(1, 6)}/(${lin()})^2`,
-    () => `(${lin()})^2/(${lin()})`,
-    () => `(${lin()})sqrt(x)`
-  ]
-};
-// fonction au hasard (texte), sans cas dégénéré (dérivée nulle, quotient simplifiable…)
-function genFonction(niv) {
-  for (let essai = 0; essai < 200; essai++) {
-    const s = pick(GENS[niv])();
-    let a;
-    try { a = E.parse(s); } catch (e) { continue; }
-    if (E.isConst(a)) continue;
-    const d = E.D(a);
-    if (E.isConst(d)) continue;
-    // pas de racine d'un nombre négatif partout, pas de quotient « constant »
-    const vals = [0.3, 0.8, 1.7, 2.6, 3.9].map(x => E.ev(a, x)).filter(Number.isFinite);
-    if (vals.length < 2) continue;
-    return s;
-  }
-  return 'x^2+1';
-}
-
 /* ---------- dérivées proposées (onglet « Remplir la formule ») ---------- */
 // La bonne dérivée d'un morceau simple et deux erreurs classiques, chacune avec sa piste.
 // → [{ node, faute }] (faute : null pour la bonne réponse)
@@ -1918,12 +1645,12 @@ function glisserVers(el, fantomeHTML, selCible, onDepot, onClic) {
 }
 
 // Fenêtre « Exercice du cours » : les fonctions des banques A et B (commune aux onglets)
-function choixBanque(zone, onChoix) {
+function choixBanque(zone, onChoix, quelles = ['A', 'B']) {
   zone.querySelector('.banque-pop')?.remove();
   const pop = document.createElement('div');
   pop.className = 'banque-pop';
   let h = '<div class="bp-tete"><b>📘 Exercices du cours</b><button class="btn bp-x" aria-label="Fermer">✕</button></div><div class="bp-corps">';
-  for (const b of ['A', 'B']) BANQUES[b].forEach((lst, i) => {
+  for (const b of quelles) BANQUES[b].forEach((lst, i) => {
     if (!lst) return;
     h += `<p class="bp-niv">Banque ${b} · niveau ${i + 1} <small>(p. ${b === 'A' ? (i < 2 ? 11 : 12) : 17})</small></p><div class="bp-liste">`;
     lst.forEach((s, j) => { h += `<button class="bp-f" data-b="${b}" data-s="${s}" title="${b}${i + 1}, n° ${j + 1}">${E.math(E.parse(s))}</button>`; });
@@ -1942,40 +1669,121 @@ function ajuste(el, max = 36, min = 18) {
   while (t > min && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)) { t -= 2; el.style.fontSize = t + 'px'; }
 }
 
-register({
-  id: 'formule', title: 'Quelle formule ?', short: 'Quelle formule ?',
-  accent: '#007C74', bg: '#EAF5F3',
-  explorer: 'ouvrir les boîtes',
-  levels: [['Choisir', 'la formule'], ['Nommer', 'les morceaux f, g, u'], ['Emboîter', 'morceau par morceau']],
-  newLabel: () => null,
-  nextLabel: lv => lv === 0 ? '↻ Autre fonction' : null,
-  consigne: lv => [
-    'Observe : la fonction s’ouvre boîte par boîte. Pour chaque boîte, tu vois la formule à appliquer et ses morceaux, jusqu’aux formules de base.',
-    'Quelle formule faut-il appliquer <b>en premier</b> pour dériver cette fonction ?',
-    'Choisis la formule, puis place les étiquettes sur les morceaux : fais-les glisser, ou clique sur une étiquette puis sur un morceau.',
-    'Choisis la formule et place les étiquettes. Puis on continue avec chaque morceau qui demande lui aussi une formule.'
-  ][lv],
 
-  create(ctx) {
-    const lv = ctx.level;
+'use strict';
+/* =====================================================================
+   Générateurs de fonctions, par onglet et par niveau (proches des banques du cours).
+   Chaque générateur renvoie un texte lisible par E.parse : x^2, sqrt(x), 3/x, (2x+1)(x-3)…
+   ===================================================================== */
+
+// polynôme : un terme de degré n au moins 2, puis d'autres degrés strictement décroissants
+function polyDegres(nMax = 4, termesMax = 3) {
+  const n = rnd(2, nMax);
+  const autres = shuffle([...Array(n).keys()]).slice(0, rnd(1, termesMax - 1)).sort((a, b) => b - a);
+  return polyTxt([[nz(-5, 5), n], ...autres.map(e => [nz(e === 0 ? -9 : -6, e === 0 ? 9 : 6), e])]);
+}
+// quotient de deux binômes sans simplification possible : ad − bc ≠ 0
+function quotientBinomes() {
+  let a, b, c, d;
+  do { a = nz(-5, 5); b = nz(-7, 7); c = nz(-5, 5); d = nz(-7, 7); } while (a * d === b * c);
+  return `(${polyTxt([[a, 1], [b, 0]])})/(${polyTxt([[c, 1], [d, 0]])})`;
+}
+const xn = () => polyTxt([[1, rnd(2, 4)], [nz(-5, 5), 0]]);        // x^n + b
+
+const GENS = {
+  // Onglet 1 : sommes et différences
+  somme: {
+    1: [() => polyDegres(4, 4)],
+    2: [
+      () => polyTxt(shuffle([[nz(-5, 5), rnd(2, 4)], [nz(-6, 6), pick([0, 1])], [nz(-4, 4), pick([-1, 0.5])]])),
+      () => polyTxt(shuffle([[nz(-5, 5), rnd(2, 3)], [nz(-4, 4), -1], [nz(-4, 4), 0.5], [nz(-9, 9), 0]]).slice(0, 3)),
+      () => polyTxt([[nz(-5, 5), rnd(2, 4)], [nz(-4, 4), pick([-1, 0.5])], [nz(-9, 9), 0]])
+    ],
+    3: [() => sommeDeguisee()]
+  },
+  // Onglet 2 : produits et quotients (la question n'annonce pas lequel)
+  prodquot: {
+    1: [
+      () => entre(lin()) + entre(lin()),
+      () => entre(lin()) + entre(lin()),
+      () => entre(xn()) + entre(lin()),
+      () => entre(lin2()) + entre(lin())
+    ],
+    2: [
+      () => quotientBinomes(),
+      () => quotientBinomes(),
+      () => `(${xn()})/(${lin()})`,
+      () => `(${lin()})/(${xn()})`
+    ],
+    3: [
+      () => `(${lin2()})(${lin()})`,
+      () => `(${polyTxt([[nz(1, 4), 1], [1, 0.5]])})(${lin2()})`,
+      () => `(${lin2()})/(${lin()})`,
+      () => `(${polyTxt([[nz(1, 3), 2], [nz(1, 4), 0.5], [nz(-5, 5), 0]])})/(${lin()})`,
+      () => `${nz(2, 5)}sqrt(x)(${lin()})`,
+      () => `sqrt(x)(${lin2()})`,
+      () => `(${lin()})/sqrt(x)`,
+      () => `(${lin2()})/(${lin2()})`
+    ]
+  },
+  // Onglet 3 : composées
+  composee: {
+    1: [() => `(${lin()})^${rnd(2, 4)}`],
+    2: [() => `sqrt(${lin()})`, () => `sqrt(${lin()})`, () => `${nz(2, 4)}sqrt(${lin()})`],
+    3: [
+      () => `${nz(1, 7)}/(${lin()})`,
+      () => `1/(${lin()})`,
+      () => `${nz(1, 6)}/(${lin()})^${rnd(2, 3)}`,
+      () => `(${lin2()})^${rnd(2, 3)}`,
+      () => `sqrt(${lin2()})`,
+      () => `${nz(1, 5)}/(${lin2()})`
+    ]
+  },
+  // Onglet 4 : défi (une composée dans un produit, un quotient avec racine…)
+  defi: {
+    1: [
+      () => `sqrt(x)/(${lin()})`,
+      () => `(${lin()})/sqrt(x)`,
+      () => `x^${rnd(2, 4)}(${lin()})^${rnd(2, 3)}`,
+      () => `(${lin()})^${rnd(2, 3)}(${lin()})^2`,
+      () => `x sqrt(${lin2()})`,
+      () => `(${lin()})/sqrt(${lin2()})`,
+      () => `x+(${lin2()})/(${lin2()})`,
+      () => `((${lin()})/(${lin()}))^2`,
+      () => `(1+${nz(1, 3)}/x)^${rnd(2, 3)}`,
+      () => `(${lin()})^2/(${lin()})`,
+      () => `(${lin()})sqrt(x)`,
+      () => `(${lin()})^${rnd(2, 3)}sqrt(x)`
+    ]
+  }
+};
+// fonction au hasard (texte), sans cas dégénéré (dérivée constante, racine d'un nombre négatif partout…)
+function genFonction(genre, niv) {
+  for (let essai = 0; essai < 300; essai++) {
+    const s = pick(GENS[genre][niv])();
+    let a;
+    try { a = E.parse(s); } catch (e) { continue; }
+    if (E.isConst(a)) continue;
+    const d = E.D(a);
+    if (E.isConst(d)) continue;
+    const vals = [0.3, 0.8, 1.7, 2.6, 3.9].map(x => E.ev(a, x)).filter(Number.isFinite);
+    if (vals.length < 2) continue;
+    return s;
+  }
+  return 'x^2+1';
+}
+
+// Étapes 1 et 2 du déroulé : reconnaître la formule (ou placer chaque terme sur sa ligne du formulaire),
+// puis nommer les morceaux f, g, u. cfg.sansOp : formules annoncées par l'onglet (le premier choix est sauté) ;
+// cfg.ops : formules proposées au premier choix.
+function creerFormule(ctx, cfg = {}) {
+    const lv = 3;
     ctx.svg.style.display = 'none';
     const zone = document.createElement('div');
     zone.className = 'zone-expr';
     zone.innerHTML = '<div class="expr" aria-live="polite"></div><div class="formules-vues"></div><div class="defis"></div>';
     ctx.svg.parentNode.appendChild(zone);
     const elExpr = zone.querySelector('.expr'), elVues = zone.querySelector('.formules-vues'), elDefis = zone.querySelector('.defis');
-    ctx.tools.innerHTML = '<button class="btn" id="bBanque">📘 Exercice du cours</button>';
-    if (lv === 0) {
-      zone.classList.add('explorer');
-      zone.insertAdjacentHTML('beforeend', '<div class="ex-nav"></div>');
-    }
-    // flèches du clavier en Explorer (un seul écouteur pour toute la page)
-    if (!window.derClavier) addEventListener('keydown', e => window.derClavier && window.derClavier(e));
-    window.derClavier = lv === 0 ? e => {
-      if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
-      if (e.key === 'ArrowRight') aller(st.k + 1); else if (e.key === 'ArrowLeft') aller(st.k - 1);
-    } : null;
-    ctx.tools.querySelector('#bBanque').onclick = () => choixBanque(zone, (s, b) => { charger(s, b === 'B'); });
 
     let q = null;           // { src, comp, T, banque }
     let st = null;          // état : phase courante, choix, étiquettes, nœuds ouverts
@@ -1995,68 +1803,11 @@ register({
       setState();
     }
 
-    /* ---------- Explorer : l'élève ouvre les boîtes une à une (de l'extérieur vers l'intérieur) ---------- */
-    // La fonction est dessinée une seule fois ; chaque étape change seulement l'aspect d'une boîte et ajoute une ligne.
-    function initExplorer() {
-      q.ordre = []; const file = [q.T];
-      while (file.length) { const T = file.shift(); q.ordre.push(T); file.push(...T.kids); }
-      st.k = 0;
-      const marks = new Map();
-      for (const T of q.tous) {
-        let cls = '';
-        if (T.role && T.role !== 'terme') {          // place réservée pour l'étiquette : rien ne bouge quand elle apparaît
-          cls += ' lab-place';
-          let n = 0; for (let p = T.parent; p; p = p.parent) if (p.role && p.role !== 'terme') n++;
-          if (n) cls += ' lab-d' + Math.min(n, 3);
-        }
-        marks.set(T.node, { id: T.id, cls });
-      }
-      elExpr.innerHTML = E.mathMarks(q.T.node, marks);
-      requestAnimationFrame(() => ajuste(elExpr));
-      majExplorer(false);
-      dessinerReponse();
-    }
-    function majExplorer(nouvelle) {
-      const n = q.ordre.length, vus = q.ordre.slice(0, st.k), courant = vus[vus.length - 1];
-      st.ouverts = new Set(vus.map(T => T.id));
-      for (const T of q.tous) {
-        const el = elExpr.querySelector(`.bx[data-id="${T.id}"]`);
-        if (!el) continue;
-        el.classList.toggle('ouvert', st.ouverts.has(T.id));
-        el.classList.toggle('courant', T === courant);
-        const lab = T.parent && st.ouverts.has(T.parent.id) && T.role !== 'terme' ? T.role : null;
-        ['f', 'g', 'u', 'k'].forEach(r => el.classList.toggle('r-' + r, r === lab));
-        if (lab) el.dataset.lab = lab; else delete el.dataset.lab;
-      }
-      elVues.innerHTML = vus.map((T, i) => ligneFormule(T).replace('class="fv', `class="fv${i === vus.length - 1 && nouvelle ? ' new' : ''}`)).join('');
-      elVues.scrollTop = elVues.scrollHeight;
-      const nav = zone.querySelector('.ex-nav');
-      nav.innerHTML = `<button class="btn" id="exPrec"${st.k ? '' : ' disabled'}>◀ Précédent</button>`
-        + `<span class="count">Étape ${st.k} / ${n}</span>`
-        + `<button class="btn" id="exZero"${st.k ? '' : ' disabled'}>↻ Recommencer</button>`
-        + `<button class="btn go" id="exSuiv"${st.k < n ? '' : ' disabled'}>${st.k < n ? (st.k ? 'Ouvrir la boîte suivante ▶' : 'Ouvrir la première boîte ▶') : 'Tout est ouvert ✓'}</button>`
-        + `<button class="btn" id="exTout"${st.k < n ? '' : ' disabled'}>▶▶ Tout ouvrir</button>`;
-      nav.querySelector('#exPrec').onclick = () => aller(st.k - 1);
-      nav.querySelector('#exZero').onclick = () => aller(0);
-      nav.querySelector('#exSuiv').onclick = () => aller(st.k + 1);
-      nav.querySelector('#exTout').onclick = toutOuvrir;
-    }
-    function aller(k) {
-      if (lv !== 0 || !q) return;
-      cancelAnim();
-      k = Math.max(0, Math.min(q.ordre.length, k));
-      const avance = k > st.k;
-      st.k = k; majExplorer(avance);
-    }
-    function toutOuvrir() {
-      play(async () => {
-        while (st.k < q.ordre.length) { st.k++; majExplorer(true); await wait(1100); }
-      });
-    }
     function phasesDe(T) {
       const ph = [];
       (function visite(T) {
-        ph.push({ type: 'op', T });
+        // formule annoncée par l'onglet : la question ne demande pas de la reconnaître
+        if (T.parent || !(cfg.sansOp && cfg.sansOp.includes(T.d.op))) ph.push({ type: 'op', T }); else q.sansOp = true;
         if (lv >= 2 && OPS_MORCEAUX.includes(T.d.op)) ph.push({ type: 'pieces', T });
         if (lv >= 2 && !T.parent && T.d.op === 'somme' && termesBase(T).length) ph.push({ type: 'lignes', T });
         if (lv >= 3) T.kids.forEach(k => { if (aDecouper(k)) visite(k); });
@@ -2067,21 +1818,22 @@ register({
     const termesBase = T => T.kids.filter(k => !k.kids.length && ['base', 'kf', 'cst'].includes(k.d.op));
     function reset() {
       st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {}, ligne: {}, selT: null, faux: null };
+      if (q.sansOp) valideOp({ T: q.T }, q.T.d.op);
+      if (!q.phases.length) st.fini = true;
       dessiner();
     }
     const phase = () => q.phases[st.i];
 
     /* ---------- dessin ---------- */
     function dessiner(opt = {}) {
-      if (lv === 0) { initExplorer(); return; }
+
       const ph = phase();
       const marks = new Map();
       for (const T of q.tous) {
         const m = { id: T.id, cls: '' };
         const parentOuvert = T.parent && st.ouverts.has(T.parent.id);
         const cible = ph && ph.type === 'pieces' && T.parent === ph.T;
-        if (lv === 0) { if (st.courant === T.id) m.cls += ' courant'; }
-        else if (cible) m.cls += ' cible';
+        if (cible) m.cls += ' cible';
         else if (opt.indice && ph && T.parent === ph.T) m.cls += ' indice';
         if (st.ouverts.has(T.id)) m.cls += ' ouvert';
         const role = etiquette(T);
@@ -2099,7 +1851,7 @@ register({
         if (st.ligne[T.id]) { m.lab = LIG(st.ligne[T.id]).lab; m.cls += ' r-l'; }
         if (ph && ph.T === T && ph.type === 'op') m.cls += ' courant';
         if (st.sel && ph && ph.type === 'pieces' && T.parent === ph.T) m.cls += ' choisissable';
-        if (m.cls || m.op || m.lab || (lv === 0 && !T.parent)) marks.set(T.node, m);
+        if (m.cls || m.op || m.lab) marks.set(T.node, m);
       }
       elExpr.innerHTML = E.mathMarks(q.T.node, marks);
       requestAnimationFrame(() => ajuste(elExpr));
@@ -2113,12 +1865,12 @@ register({
       elVues.innerHTML = q.tous.filter(T => st.ouverts.has(T.id)).map(T => ligneFormule(T)).join('');
       elDefis.innerHTML = '';
       dessinerReponse();
-      if (lv === 0) elVues.scrollTop = elVues.scrollHeight;
+
     }
     // étiquette affichée sur ce nœud (f, g, u) ou null
     function etiquette(T) {
       const parentOuvert = T.parent && st.ouverts.has(T.parent.id);
-      return st.lab[T.id] || (parentOuvert && lv === 0 && T.role !== 'terme' ? T.role : null) || (parentOuvert && st.tagRole[T.id]) || null;
+      return st.lab[T.id] || (parentOuvert && st.tagRole[T.id]) || null;
     }
     function ligneFormule(T) {
       const op = st.opDe[T.id] || T.d.op, F0 = FORMULES[op];
@@ -2156,7 +1908,7 @@ register({
 
     /* ---------- zone réponse (panneau de gauche) ---------- */
     function dessinerReponse() {
-      if (lv === 0) { ctx.q.innerHTML = `<span class="qf">${E.math(E.parse(q.src))}</span>`; return; }
+
       if (st.fini) { ctx.q.innerHTML = `<p class="qtitre">Formules trouvées ✓</p><p class="qhint">Elles sont écrites sous la fonction. Passe à une autre question !</p>`; return; }
       const ph = phase();
       if (ph.type === 'lignes') {
@@ -2176,7 +1928,8 @@ register({
       }
       if (ph.type === 'op') {
         const quoi = ph.T.parent ? `Pour dériver <span class="qui r-${ph.T.role}">${ph.T.role === 'terme' ? 'ce terme' : ph.T.role}</span>, quelle formule ?` : 'Quelle formule en premier ?';
-        const ops = ORDRE_FORMULES.filter(o => q.comp || !FORMULES[o].comp);
+        const tout = ORDRE_FORMULES.filter(o => q.comp || !FORMULES[o].comp);
+        const ops = cfg.ops && !ph.T.parent && cfg.ops.includes(ph.T.d.op) ? tout.filter(o => cfg.ops.includes(o)) : tout;
         ctx.q.innerHTML = `<p class="qtitre">${quoi}</p><div class="cartes">` + ops.map(o =>
           `<button class="carte${st.choix === o ? ' on' : ''}" data-op="${o}"><small>${FORMULES[o].nom}</small><span class="mw"><span class="m">${FORMULES[o].f}</span></span></button>`).join('') + '</div>';
         ctx.q.querySelectorAll('.carte').forEach(b => b.onclick = () => { st.choix = b.dataset.op; ctx.changed(); dessinerReponse(); });
@@ -2378,21 +2131,13 @@ register({
     }
 
     return {
-      next(same) {
-        if (same || !q || lv === 0 || !q.banque) {
-          // Explorer : 60 % de fonctions de niveau 1, 25 % de niveau 2, 15 % de niveau 3 (répartition du cours)
-          const r = Math.random(), niv = lv === 0 ? (r < .6 ? 1 : r < .85 ? 2 : 3) : lv;
-          charger(genFonction(niv), true);
-        }
-      },
-      check() { return lv === 0 ? null : check(); },
-      hint,
-      solve,
+      zone, charger, dessiner, phase: () => phase(), estFini: () => !!(st && st.fini), source: () => q && q.src,
+      check, hint, solve,
       edited() { if (st && st.faux) { st.faux = null; dessiner(); } },
       debug: () => ({ q, st })
     };
   }
-});
+
 
 /* =====================================================================
    Onglet 2 : « Remplir la formule » : choisir la dérivée des morceaux simples,
@@ -2495,30 +2240,16 @@ function memeValeur(a, b) {
   return n >= 3;
 }
 
-register({
-  id: 'remplir', title: 'Remplir la formule', short: 'Remplir la formule',
-  accent: '#A00058', bg: '#F9EDF3',
-  explorer: 'regarder remplir',
-  levels: [['Simple', 'sommes, produits, quotients'], ['Composées', 'avec √, uⁿ, 1/u'], ['Emboîter', 'morceau par morceau']],
-  newLabel: () => null,
-  nextLabel: lv => lv === 0 ? '↻ Autre fonction' : null,
-  consigne: lv => [
-    'Observe : à chaque étape, une dérivée est choisie, une case de la formule se remplit, puis le calcul se simplifie ligne par ligne.',
-    'Choisis la dérivée de chaque morceau, puis glisse les tuiles dans les cases de la formule.',
-    'Choisis la dérivée de chaque morceau, puis glisse les tuiles dans les cases de la formule.',
-    'Commence par le morceau emboîté : sa dérivée devient une tuile. Puis remplis la formule principale.'
-  ][lv],
-
-  create(ctx) {
-    const lv = ctx.level;
+// Étapes 3 et 4 du déroulé : choisir la dérivée de chaque morceau, remplir la formule,
+// puis faire défiler la simplification jusqu'à la forme finale.
+function creerRemplir(ctx) {
     ctx.svg.style.display = 'none';
     const zone = document.createElement('div');
-    zone.className = 'zone-expr remplir' + (lv === 0 ? ' explorer' : '');
+    zone.className = 'zone-expr remplir';
     zone.innerHTML = '<div class="expr"></div><div class="formule-nom"></div><div class="modele"></div><div class="lignes-sol"></div><div class="ex-nav"></div>';
     ctx.svg.parentNode.appendChild(zone);
     const $z = s => zone.querySelector(s);
-    ctx.tools.innerHTML = '<button class="btn" id="bBanque">📘 Exercice du cours</button>';
-    ctx.tools.querySelector('#bBanque').onclick = () => choixBanque(zone, (s, b) => charger(s, b === 'B'));
+    // flèches du clavier : ligne suivante / précédente de la simplification
     if (!window.derClavier) addEventListener('keydown', e => window.derClavier && window.derClavier(e));
     window.derClavier = e => {
       if (/INPUT|TEXTAREA/.test(document.activeElement.tagName) || App.sol) return;
@@ -2528,8 +2259,8 @@ register({
     let q = null, st = null;
 
     /* ---------- question ---------- */
-    function charger(src, comp) {
-      cancelAnim(); clearFeedback(); App.solved = App.revealed = false; App.sol = null;
+    function charger(src, comp, silencieux) {
+      if (!silencieux) { cancelAnim(); clearFeedback(); App.solved = App.revealed = false; App.sol = null; }
       ctx.tools.querySelector('.stepbar')?.remove(); ctx.tools.classList.remove('en-correction');
       const a = E.parse(src);
       q = { src, comp, a, T: arbre(a, comp) };
@@ -2546,8 +2277,8 @@ register({
       // lignes de la correction écrite (après la formule remplie) : celles du moteur
       q.lignes = E.etapes(a, { composees: comp }).slice(1);
       reset();
-      setState();
-      if (lv === 0) { exSteps = etapesExplorer(); exK = 0; reset(); }
+      if (!silencieux) setState();
+
     }
     function reset() {
       st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [] };
@@ -2630,7 +2361,7 @@ register({
         `<p class="ls${i === st.ligne - 1 ? ' new' : ''}"><span class="m">= ${E.html(l)}</span>${i === q.lignes.length - 1 ? ' <span class="fin">forme finale ✓</span>' : ''}</p>`).join('') : '';
       L.innerHTML = trouves + lignes;
       L.scrollTop = L.scrollHeight;
-      if (lv === 0) { nav.style.display = ''; navExplorer(); return; }
+
       if (!st.fini) { nav.style.display = 'none'; return; }
       nav.style.display = '';
       const n = q.lignes.length;
@@ -2639,13 +2370,13 @@ register({
         + `<button class="btn go" id="nSuiv"${st.ligne < n ? '' : ' disabled'}>${st.ligne < n ? (st.ligne ? 'Ligne suivante ▶' : 'Simplifier ▶') : 'Compare avec ta feuille ✓'}</button>`
         + `<button class="btn" id="nTout"${st.ligne < n ? '' : ' disabled'}>▶▶ Tout afficher</button>`;
       $z('#nPrec').onclick = () => { st.ligne--; dessinerLignes(); };
-      $z('#nSuiv').onclick = () => { st.ligne++; dessinerLignes(); };
-      $z('#nTout').onclick = () => { st.ligne = n; dessinerLignes(); };
+      $z('#nSuiv').onclick = () => { st.ligne++; dessinerLignes(); if (st.ligne >= n && ctx.termine) ctx.termine(); };
+      $z('#nTout').onclick = () => { st.ligne = n; dessinerLignes(); if (ctx.termine) ctx.termine(); };
     }
 
     /* ---------- zone réponse ---------- */
     function dessinerReponse() {
-      if (lv === 0) { ctx.q.innerHTML = `<span class="qf">${E.math(q.a)}</span>`; return; }
+
       if (st.fini) { ctx.q.innerHTML = '<p class="qtitre">Formule remplie ✓</p><p class="qhint">Fais défiler les lignes de simplification sous la formule et compare avec ta feuille.</p>'; return; }
       const ph = phase(), p = ph.p;
       if (ph.type === 'choix') {
@@ -2684,8 +2415,14 @@ register({
     }
 
     /* ---------- vérification ---------- */
+    // la formule est remplie : le Bravo vient quand la simplification est arrivée à la forme finale
+    function fin(msg) {
+      if (st.ligne >= q.lignes.length) return { ok: true, msg: (msg ? msg + ' ' : '') + 'Compare avec ta feuille.' };
+      feedback('ok', 'Oui ! ✓', (msg ? msg + ' ' : '') + 'Fais maintenant défiler la simplification, ligne par ligne, jusqu’à la forme finale.');
+      return null;
+    }
     function check() {
-      if (st.fini) return { ok: true };
+      if (st.fini) return fin('');
       const ph = phase(), p = ph.p;
       let msg;
       if (ph.type === 'choix') {
@@ -2707,7 +2444,7 @@ register({
       const emboite = p !== q.plan && (ph.type === 'placer' || p.auto);
       avancer();
       dessiner();
-      if (st.fini) return { ok: true, msg: msg + ' Fais défiler les lignes pour simplifier, et compare avec ta feuille.' };
+      if (st.fini) return fin(msg);
       feedback('ok', 'Oui ! ✓', msg + (emboite ? ' Cette dérivée devient une tuile de la formule suivante.' : ''));
       return null;
     }
@@ -2759,52 +2496,142 @@ register({
           });
         }
       });
+      // somme : les dérivées choisies s'assemblent d'elles-mêmes (pas de case à remplir)
+      if (q.plan.auto) steps.push({
+        say: `On assemble : <span class="m">(${FORMULES[q.plan.op].f || "<i>f</i>"})′ = ${FORMULES[q.plan.op].d || "<i>f</i>′"}</span>.`,
+        write: `<span class="m"><i>f</i>′(<i>x</i>) = ${E.html(remplie(q.plan, true))}</span>`,
+        run: async () => { dessiner(); }
+      });
+      // puis la simplification, ligne par ligne, jusqu'à la forme finale
+      q.lignes.forEach((l, i) => steps.push({
+        say: i === q.lignes.length - 1 ? 'Voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
+        write: `<span class="m">= ${E.html(l)}</span>`,
+        run: async () => { st.ligne = i + 1; dessinerLignes(); }
+      }));
       return { reset() { reset(); return {}; }, steps };
     }
 
-    /* ---------- Explorer : la correction, puis les lignes, pas à pas ---------- */
-    let exK = 0, exSteps = null;
-    function navExplorer() {
-      if (!exSteps) return;
-      const n = exSteps.length, nav = $z('.ex-nav');
-      nav.innerHTML = `<button class="btn" id="nPrec"${exK ? '' : ' disabled'}>◀ Précédent</button><span class="count">Étape ${exK} / ${n}</span>`
-        + `<button class="btn" id="nZero"${exK ? '' : ' disabled'}>↻ Recommencer</button>`
-        + `<button class="btn go" id="nSuiv"${exK < n ? '' : ' disabled'}>${exK < n ? 'Étape suivante ▶' : 'Terminé ✓'}</button>`
-        + `<button class="btn" id="nTout"${exK < n ? '' : ' disabled'}>▶▶ Tout voir</button>`;
-      $z('#nPrec').onclick = () => allerEx(exK - 1);
-      $z('#nZero').onclick = () => allerEx(0);
-      $z('#nSuiv').onclick = () => allerEx(exK + 1);
-      $z('#nTout').onclick = () => play(async () => { while (exK < n) { await jouerEx(exK + 1); await wait(1100); } });
-    }
-    function etapesExplorer() {
-      const s = solve().steps.map(x => x.run);
-      for (let i = 1; i <= q.lignes.length; i++) s.push(async () => { st.ligne = i; dessinerLignes(); });
-      return s;
-    }
-    async function jouerEx(k) {
-      k = Math.max(0, Math.min(exSteps.length, k));
-      reset();
-      const old = animScale;
-      animScale = 0;
-      try { for (let i = 0; i < k - 1; i++) await exSteps[i](); } finally { animScale = old; }
-      exK = k;
-      if (k) await exSteps[k - 1]();
-      navExplorer();
-    }
-    const allerEx = k => play(() => jouerEx(k));
 
     return {
-      next() {
-        // Explorer : 60 % de fonctions de niveau 1, 25 % de niveau 2, 15 % de niveau 3 (répartition du cours)
-        const r = Math.random(), niv = lv === 0 ? (r < .6 ? 1 : r < .85 ? 2 : 3) : lv;
-        charger(genFonction(niv), true);
-      },
-      check() { return lv === 0 ? null : check(); },
-      hint, solve,
+      zone, charger, dessiner, estFini: () => !!(st && st.fini), source: () => q && q.src,
+      check, hint, solve,
       edited() { if (st && (st.faux.size || st.fauxChoix.size)) { st.faux.clear(); st.fauxChoix.clear(); dessiner(); } },
       debug: () => ({ q, st })
     };
   }
+
+
+'use strict';
+/* =====================================================================
+   Les quatre onglets : le même déroulé en quatre étapes.
+     1. reconnaître la formule et les morceaux f, g, u        (creerFormule)
+     2. choisir la dérivée de chaque morceau parmi trois       (creerRemplir)
+     3. remplir la formule                                     (creerRemplir)
+     4. faire défiler la simplification jusqu'à la forme finale (creerRemplir)
+   cfg : genre (clé de GENS), comp (composées permises), banques, formule (options de l'étape 1)
+   ===================================================================== */
+function creerOnglet(cfg) {
+  return function (ctx) {
+    const niv = ctx.level;
+    ctx.tools.innerHTML = '<ol class="etapes" aria-label="Les quatre étapes">' + ['Formule', 'Dérivées', 'Remplir', 'Simplifier']
+      .map((n, i) => '<li><b><span>' + (i + 1) + '</span></b>' + n + '</li>').join('') + '</ol>'
+      + '<button class="btn" id="bBanque">📘 Exercice du cours</button>';
+    const s1 = creerFormule(ctx, cfg.formule || {});
+    const s2 = creerRemplir(ctx);
+    ctx.termine = () => doCheck();            // la simplification est arrivée à la forme finale
+    let etape = 1, src = null, comp = cfg.comp;
+
+    // indicateur des quatre étapes : formule, dérivées, remplir, simplifier
+    function majEtapes() {
+      let cur = 1;
+      if (etape === 2) { const { q, st } = s2.debug(); cur = st.fini ? 4 : q.phases[st.i].type === 'choix' ? 2 : 3; }
+      ctx.tools.querySelectorAll('.etapes li').forEach((li, i) => {
+        li.classList.toggle('on', i + 1 === cur);
+        li.classList.toggle('fait', i + 1 < cur);
+      });
+    }
+    const montrer = (n, dessine = true) => {
+      etape = n;
+      s1.zone.style.display = n === 1 ? '' : 'none';
+      s2.zone.style.display = n === 2 ? '' : 'none';
+      if (dessine) (n === 1 ? s1 : s2).dessiner();
+      majEtapes();
+    };
+    function charger(s, c) {
+      src = s; comp = c;
+      cancelAnim();
+      montrer(1, false);
+      s1.charger(src, comp);
+      majEtapes();
+      if (s1.estFini()) passer('');           // rien à reconnaître : on passe directement aux dérivées
+    }
+    // étape 1 réussie : on passe aux dérivées
+    function passer(msg) {
+      s2.charger(src, comp);
+      montrer(2, false);
+      if (msg !== '') feedback('ok', 'Oui ! ✓', msg + ' Passons aux dérivées : choisis celle de chaque morceau.');
+    }
+    ctx.tools.querySelector('#bBanque').onclick = () =>
+      choixBanque((etape === 1 ? s1 : s2).zone, (s, b) => charger(s, b === 'B'), cfg.banques);
+
+    return {
+      next() { charger(genFonction(cfg.genre, niv), cfg.comp); },
+      check() {
+        try {
+          if (etape === 2) return s2.check();
+          const r = s1.check();
+          if (r && r.ok) { passer(r.msg || ''); return null; }
+          return r;
+        } finally { majEtapes(); }
+      },
+      hint() { return (etape === 1 ? s1 : s2).hint(); },
+      edited() { (etape === 1 ? s1 : s2).edited(); },
+      // correction : les quatre étapes à la suite
+      solve() {
+        const a = s1.solve();
+        s2.charger(src, comp, true);                  // reconstruit l'étape 2 sans toucher au reste
+        const b = s2.solve();
+        const vers = (n, st) => Object.assign({}, st, { run: async S => { if (etape !== n) montrer(n); return st.run(S); } });
+        return {
+          reset() { b.reset(); a.reset(); montrer(1); return {}; },
+          steps: [...a.steps.map(st => vers(1, st)), ...b.steps.map(st => vers(2, st))]
+        };
+      },
+      debug: () => ({ etape, src, s1: s1.debug(), s2: s2.debug() })
+    };
+  };
+}
+
+register({ id: 'somme', title: 'Sommes et différences', short: 'Sommes',
+  accent: '#007C74', bg: '#EAF5F3',
+  levels: [['', 'xⁿ, kx, constantes'], ['', 'avec 1/x et √x'], ['', 'termes déguisés (3/x², x/4…)']],
+  newLabel: () => null,
+  consigne: () => 'Une somme se dérive <b>terme par terme</b>. Place chaque terme sur sa ligne du formulaire, choisis sa dérivée, assemble, puis suis la simplification.',
+  create: creerOnglet({ genre: 'somme', comp: false, banques: ['A'], formule: { sansOp: ['somme'] } })
+});
+
+register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et quotients',
+  accent: '#A00058', bg: '#F9EDF3',
+  levels: [['', 'produits de binômes'], ['', 'quotients de binômes'], ['', 'polynômes plus longs, avec √x']],
+  newLabel: () => null,
+  consigne: () => 'Produit ou quotient ? <b>Choisis la formule</b>, nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, remplis la formule, puis suis la simplification.',
+  create: creerOnglet({ genre: 'prodquot', comp: false, banques: ['A'] })
+});
+
+register({ id: 'composee', title: 'Composées', short: 'Composées',
+  accent: '#EC6708', bg: '#FDF1E7',
+  levels: [['', '(ax + b)ⁿ'], ['', '√u'], ['', '1/u, k/uⁿ, u du 2e degré']],
+  newLabel: () => null,
+  consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. <b>Choisis la formule</b>, nomme <i>u</i>, choisis sa dérivée <i>u</i>′, remplis la formule, puis suis la simplification.',
+  create: creerOnglet({ genre: 'composee', comp: true, banques: ['B'], formule: { ops: ['puissance', 'racine', 'inverse'] } })
+});
+
+register({ id: 'defi', title: 'Défi', short: 'Défi',
+  accent: '#3B5C76', bg: '#EEF1F4',
+  levels: [['', 'formules emboîtées']],
+  newLabel: () => null,
+  consigne: () => 'Ici, plusieurs formules s’emboîtent. <b>Choisis d’abord la formule à appliquer en premier</b>, puis continue morceau par morceau.',
+  create: creerOnglet({ genre: 'defi', comp: true, banques: ['A', 'B'] })
 });
 
 boot('der56');
