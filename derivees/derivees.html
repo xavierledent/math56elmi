@@ -432,7 +432,11 @@ button, input { font: inherit; }
 @media (max-width: 560px) { .ex-cours .num { min-width: 24px; height: 24px; font-size: 11.5px; } }
 
 /* Fenêtre de la simplification : par-dessus la zone de la fonction, toute la place pour le calcul */
-.simpl { position: absolute; inset: 4px; z-index: 15; background: #fff; border-radius: 14px; border-top: 4px solid var(--accent); box-shadow: 0 10px 30px rgba(27,42,74,.18); display: flex; flex-direction: column; animation: reveal .3s ease; }
+.simpl { position: absolute; inset: 4px; z-index: 15; background: #fff; border-radius: 14px; border-top: 4px solid var(--accent); box-shadow: 0 10px 30px rgba(27,42,74,.18); display: flex; flex-direction: column; }
+.simpl.ouvre { animation: reveal .3s ease; }
+/* ligne surlignée : seule une ligne qui vient d'être ajoutée apparaît en douceur */
+.simpl-corps .ls.new { animation: none; }
+.simpl-corps .ls.arrive { animation: apparait .45s ease both; }
 .simpl[hidden] { display: none; }
 .simpl-tete { flex: none; display: flex; align-items: center; gap: 12px; padding: 8px 10px 6px 16px; border-bottom: 1px solid var(--line); font-family: var(--ui); }
 .simpl-tete b { color: var(--accent); }
@@ -2223,14 +2227,14 @@ function creerRemplir(ctx) {
       if (e.key === 'ArrowRight') $z('#nSuiv')?.click(); else if (e.key === 'ArrowLeft') $z('#nPrec')?.click();
     };
 
-    let q = null, st = null;
+    let q = null, st = null, numQuestion = 0;
 
     /* ---------- question ---------- */
     function charger(src, comp, silencieux) {
       if (!silencieux) { cancelAnim(); clearFeedback(); App.solved = App.revealed = false; App.sol = null; }
       ctx.tools.querySelector('.stepbar')?.remove(); ctx.tools.classList.remove('en-correction');
       const a = E.parse(src);
-      q = { src, comp, a, T: arbre(a, comp) };
+      q = { src, comp, a, T: arbre(a, comp), num: ++numQuestion };
       { let n = 0; (function num(T) { T.id = "n" + (n++); T.kids.forEach(num); })(q.T); }
       q.plan = planDe(q.T, comp);
       // phases : morceaux emboîtés d'abord (du plus profond au moins profond), puis choix, puis cases
@@ -2341,28 +2345,65 @@ function creerRemplir(ctx) {
       if (st.ferme) { $z('#nOuvrir').onclick = () => { st.ferme = false; dessinerLignes(); }; return; }
       dessinerSimpl();
     }
-    // la fenêtre : la fonction en rappel, la formule remplie, puis une ligne par étape du calcul
+    // la fenêtre : la fonction en rappel, la formule remplie, puis une ligne par étape du calcul.
+    // Construite une fois par question ; ensuite on ajoute ou on retire seulement les lignes qui changent
+    // (rien n'est redessiné : pas de scintillement).
+    let imageSimpl = 0;
     function dessinerSimpl() {
       const n = q.lignes.length, corps = $z('.simpl-corps');
+      if (+corps.dataset.q !== q.num) construireSimpl();
+      // navigation : mise à jour sur place
+      $z('.simpl-nav').style.display = App.sol ? 'none' : '';          // pendant la correction animée, c'est le bandeau d'étapes qui avance
+      $z('#nPrec').disabled = !st.ligne;
+      $z('.simpl-nav .count').textContent = `Ligne ${st.ligne} / ${n}`;
+      $z('#nSuiv').disabled = st.ligne >= n;
+      $z('#nSuiv').textContent = st.ligne < n ? (st.ligne ? 'Ligne suivante ▶' : 'Simplifier ▶') : 'Compare avec ta feuille ✓';
+      $z('#nTout').disabled = st.ligne >= n;
+      // les lignes : une seule mise à jour par image (la correction rejoue les étapes précédentes d'un coup)
+      if (!imageSimpl) imageSimpl = requestAnimationFrame(() => { imageSimpl = 0; if (!$z('.simpl').hidden) lignesSimpl(); });
+    }
+    function lignesSimpl() {
+      const n = q.lignes.length, corps = $z('.simpl-corps');
+      // lignes : on retire celles en trop, on ajoute celles qui manquent
+      const dom = [...corps.querySelectorAll('.ls:not(.depart)')];
+      for (let k = dom.length - 1; k >= st.ligne; k--) dom[k].remove();
+      let ajout = null;
+      for (let k = dom.length; k < st.ligne; k++) {
+        const l = q.lignes[k], p = document.createElement('p');
+        p.className = 'ls';
+        p.innerHTML = (l.lab ? `<span class="eti">${l.lab}</span>` : '') + `<span class="m">= ${E.html(l)}</span>`
+          + (k === n - 1 ? ' <span class="fin">forme finale ✓</span>' : '');
+        corps.insertBefore(p, corps.querySelector('svg.arcs'));
+        ajuste(p, 26, 12);
+        ajout = p;
+      }
+      corps.querySelectorAll('.ls.arrive').forEach(p => { if (p !== ajout) p.classList.remove('arrive'); });
+      // seule la dernière ligne est surlignée ; l'animation d'apparition ne joue que pour une ligne ajoutée
+      corps.querySelectorAll('.ls:not(.depart)').forEach((p, k) => p.classList.toggle('new', k === st.ligne - 1));
+      if (ajout) { ajout.classList.add('arrive'); requestAnimationFrame(() => { corps.scrollTop = Math.max(0, ajout.offsetTop + ajout.offsetHeight - corps.clientHeight + 8); }); }
+      // arcs de la distributivité : visibles quand la ligne « distribuer » est la dernière affichée (tracés une fois)
+      const derniere = q.lignes[st.ligne - 1], svg = corps.querySelector('svg.arcs');
+      const voirArcs = !!(derniere && derniere.paires && derniere.paires.length);
+      if (voirArcs && !svg) dessinerArcs(corps, derniere.paires);
+      if (svg) svg.style.display = voirArcs ? '' : 'none';
+    }
+    function construireSimpl() {
+      const n = q.lignes.length, corps = $z('.simpl-corps'), pop = $z('.simpl');
+      corps.dataset.q = q.num;
+      // la fenêtre s'ouvre en glissant une seule fois par question
+      pop.classList.add('ouvre');
+      pop.addEventListener('animationend', () => pop.classList.remove('ouvre'), { once: true });
       $z('.rappel').innerHTML = '<i>f</i>(<i>x</i>) = ' + E.html(q.a);
       $z('.simpl-x').onclick = () => { st.ferme = true; dessinerLignes(); };
-      const derniere = q.lignes[st.ligne - 1];
-      const arcs = !!(derniere && derniere.paires && derniere.paires.length);
-      // termes des facteurs distribués, repérés dans la ligne de départ
+      // termes des facteurs distribués, repérés dans la ligne de départ (pour les arcs)
       const marks = new Map();
-      if (arcs) derniere.paires.forEach((pr, k) => pr.forEach((ts, j) => ts.forEach((t, i) => marks.set(t, { id: k + '-' + j + '-' + i, cls: 'tm' }))));
-      corps.innerHTML = `<p class="ls depart"><i>f</i>′(<i>x</i>) = ${E.mathMarks(q.depart, marks)}</p>`
-        + q.lignes.slice(0, st.ligne).map((l, i) => `<p class="ls${i === st.ligne - 1 ? ' new' : ''}">${l.lab ? `<span class="eti">${l.lab}</span>` : ''}<span class="m">= ${E.html(l)}</span>`
-          + (i === n - 1 ? ' <span class="fin">forme finale ✓</span>' : '') + '</p>').join('');
-      corps.querySelectorAll('.ls').forEach(p => ajuste(p, 26, 12));
-      if (arcs) requestAnimationFrame(() => dessinerArcs(corps, derniere.paires));
-      const cur = corps.querySelector('.ls.new') || corps.querySelector('.ls');
-      requestAnimationFrame(() => { corps.scrollTop = Math.max(0, cur.offsetTop + cur.offsetHeight - corps.clientHeight + 8); });
+      q.lignes.filter(l => l.paires).forEach(l => l.paires.forEach((pr, k) => pr.forEach((ts, j) => ts.forEach((t, i) => marks.set(t, { id: k + '-' + j + '-' + i, cls: 'tm' })))));
+      corps.innerHTML = `<p class="ls depart"><i>f</i>′(<i>x</i>) = ${E.mathMarks(q.depart, marks)}</p>`;
+      ajuste(corps.querySelector('.ls'), 26, 12);
+      corps.scrollTop = 0;
       const nv = $z('.simpl-nav');
-      nv.style.display = App.sol ? 'none' : '';          // pendant la correction animée, c'est le bandeau d'étapes qui avance
-      nv.innerHTML = `<button class="btn" id="nPrec"${st.ligne ? '' : ' disabled'}>◀ Précédent</button><span class="count">Ligne ${st.ligne} / ${n}</span>`
-        + `<button class="btn go" id="nSuiv"${st.ligne < n ? '' : ' disabled'}>${st.ligne < n ? (st.ligne ? 'Ligne suivante ▶' : 'Simplifier ▶') : 'Compare avec ta feuille ✓'}</button>`
-        + `<button class="btn" id="nTout"${st.ligne < n ? '' : ' disabled'}>▶▶ Tout afficher</button>`;
+      nv.innerHTML = '<button class="btn" id="nPrec">◀ Précédent</button><span class="count"></span>'
+        + '<button class="btn go" id="nSuiv"></button><button class="btn" id="nTout">▶▶ Tout afficher</button>';
       $z('#nPrec').onclick = () => { st.ligne--; dessinerLignes(); };
       $z('#nSuiv').onclick = () => { st.ligne++; dessinerLignes(); if (st.ligne >= n && ctx.termine) ctx.termine(); };
       $z('#nTout').onclick = () => { st.ligne = n; dessinerLignes(); if (ctx.termine) ctx.termine(); };
