@@ -431,6 +431,26 @@ button, input { font: inherit; }
 .ex-cours .num.on { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent); }
 @media (max-width: 560px) { .ex-cours .num { min-width: 24px; height: 24px; font-size: 11.5px; } }
 
+/* Fenêtre de la simplification : par-dessus la zone de la fonction, toute la place pour le calcul */
+.simpl { position: absolute; inset: 4px; z-index: 15; background: #fff; border-radius: 14px; border-top: 4px solid var(--accent); box-shadow: 0 10px 30px rgba(27,42,74,.18); display: flex; flex-direction: column; animation: reveal .3s ease; }
+.simpl[hidden] { display: none; }
+.simpl-tete { flex: none; display: flex; align-items: center; gap: 12px; padding: 8px 10px 6px 16px; border-bottom: 1px solid var(--line); font-family: var(--ui); }
+.simpl-tete b { color: var(--accent); }
+.simpl-tete .rappel { flex: 1; min-width: 0; overflow: hidden; font-size: 17px; color: var(--ink2); }
+.simpl-x { padding: 4px 10px; }
+.simpl-corps { position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 6px; scroll-behavior: smooth; }
+.simpl-corps .ls { flex: none; overflow: hidden; white-space: nowrap; position: relative; z-index: 1; }
+.simpl-corps .ls.depart { padding-top: 34px; font-family: "Source Serif 4", Georgia, serif; }
+.simpl-corps .eti { display: block; font: 700 11px var(--ui); text-transform: uppercase; letter-spacing: .5px; color: var(--accent); line-height: 1.3; }
+.simpl-nav { flex: none; display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; padding: 8px; border-top: 1px solid var(--line); }
+.simpl-nav .count { font: 600 12px var(--ui); color: var(--ink2); min-width: 72px; text-align: center; }
+.simpl-nav .btn { font-size: 12.5px; padding: 7px 12px; }
+.simpl-nav .btn.go { background: var(--accent); border-color: var(--accent); color: #fff; }
+.figure-card svg.arcs { position: absolute; left: 0; top: 0; width: 100%; max-height: none; pointer-events: none; overflow: visible; z-index: 2; touch-action: auto; }
+svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: trace-arc .6s ease forwards; }
+@keyframes trace-arc { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { svg.arcs path { animation-duration: .01s; } }
+
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
   color: #1B2A4A; background: #fff; border: 1.5px solid #D3D2C9; border-radius: 10px; cursor: pointer; }
@@ -1236,16 +1256,76 @@ const E = (() => {
     const t = liste.filter(([, c]) => c.n).map(([k, c]) => mono(k, c));
     return t.length ? (t.length === 1 ? t[0] : S(...t)) : N(0);
   }
-  function intermediaire(a) {
-    if (hasRootX(a)) return null;
-    const b = brut(a);
-    if (a.t === 'p' && voieLaurent(a)) return developpe(b);
-    if (a.t === 'q' && b.t === 'q' && !isConst(a.n)) { const n = developpe(b.n); return n && clean(Q(n, b.d)); }
-    return null;
+  // Distributivité, comme dans le cahier : chaque produit d'une somme de produits est
+  //   ① distribué terme à terme  2x·(−2x²) + 2x·(−1) + …   (un produit soustrait reste entre parenthèses)
+  //   ② les produits sont calculés  −4x³ − 2x − … − (−4x³ − 16x² + 12x)
+  //   ③ les parenthèses tombent (le « − » change les signes)
+  // → [ligne ①, ligne ②, ligne ③] (nœuds) ou null si une des expressions ne s'y prête pas
+  function distribution(b) {
+    const termes = b.t === 's' ? b.a : [b], L1 = [], L2 = [], paires = [];
+    let distribue = false, soustrait = false;
+    const lab = (n, l) => { n.lab = l; return n; };
+    const abs = c => F(Math.abs(c.n), c.d);
+    for (const t of termes) {
+      const [sg, c] = splitSign(t);
+      let fs = c.t === 'p' ? c.a : [c];
+      if (fs.some(hasPowSum)) return null;
+      // facteur 1 : le produit est l'autre facteur
+      fs = fs.filter(f => !isN(f, 1));
+      if (fs.length > 2) return null;
+      const ms = fs.map(monomesDe);
+      if (ms.some(m => !m)) return null;
+      let a1 = [], a2 = [];
+      if (fs.length === 2) {
+        if (ms[0].length * ms[1].length > 1) {
+          distribue = true;
+          // facteurs tels qu'ils sont écrits dans la formule remplie (pour les arcs de la distributivité)
+          const o = t.t === 'g' ? t.a : t, fo = (o.t === 'p' ? o.a : [o]).filter(f => !isN(f, 1));
+          if (fo.length === 2) paires.push(fo.map(f => (f.t === 's' ? f.a : [f])));
+        }
+        // u·v écrit avec le signe de u devant : − 3·(−4x)
+        for (const [i, u] of ms[0]) for (const [j, v] of ms[1]) {
+          const p = Pd(mono(i, abs(u)), mono(j, v));
+          a1.push(u.n < 0 ? G(p) : p);
+          const w = fmul(u, v);
+          if (w.n) a2.push(mono(i + j, w));
+        }
+      } else {
+        // un seul facteur : une somme s'écrit terme à terme, un produit (x + 1)(x − 2) reste tel quel
+        const f = fs[0] || N(1), m = ms[0] || [[0, ONE]];
+        a1 = f.t === 'p' ? [f] : m.map(([k, w]) => mono(k, w));
+        a2 = m.filter(([, w]) => w.n).map(([k, w]) => mono(k, w));
+      }
+      if (!a2.length) a2 = [N(0)];
+      if (sg) {
+        soustrait = soustrait || a2.length > 1;
+        L1.push(a1.length > 1 ? G(S(...a1)) : G(a1[0]));
+        L2.push(a2.length > 1 ? G(S(...a2)) : G(a2[0]));
+      } else { L1.push(...a1); L2.push(...a2); }
+    }
+    if (!distribue) return null;
+    const somme = l => (l.length === 1 ? l[0] : S(...l));
+    const l1 = lab(somme(L1), 'distribuer');
+    l1.paires = paires;                     // [[termes du 1er facteur], [termes du 2e]] de chaque produit distribué
+    const out = [l1, lab(somme(L2), 'calculer les produits')];
+    if (soustrait) out.push(lab(developpe(b), 'enlever les parenthèses'));
+    return out;
   }
-  // [formule remplie, (ligne développée), forme finale], sans doublon
+  function intermediaire(a, b) {
+    if (hasRootX(a)) return [];
+    if (a.t === 'p' && voieLaurent(a)) return distribution(b) || [developpe(b)];
+    if (a.t === 'q' && b.t === 'q' && !isConst(a.n)) {
+      const d = distribution(b.n);
+      if (d) return d.map(n => { const q = Q(n, b.d); q.lab = n.lab; q.paires = n.paires; return q; });
+      const n = developpe(b.n); return n ? [clean(Q(n, b.d))] : [];
+    }
+    return [];
+  }
+  // [formule remplie, (lignes de développement), forme finale], sans doublon ; .lab : nom de l'étape
   function etapes(a) {
-    const lignes = [brut(a), intermediaire(a), D(a)].filter(Boolean), out = [];
+    const b = brut(a), mil = intermediaire(a, b), fin = D(a);
+    if (mil.some(l => l.lab)) fin.lab = 'réduire';
+    const lignes = [b, ...mil.filter(Boolean), fin], out = [];
     for (const l of lignes) if (!out.length || html(out[out.length - 1]) !== html(l)) out.push(l);
     return out;
   }
@@ -1548,8 +1628,7 @@ function propositions(a, comp = true) {
   const cand = [];
   const L = E.toL(a, true);
   if (E.isConst(a)) {
-    const k = E.toL(a) && E.toL(a).get(0);
-    cand.push([E.N(k && k.n ? k : F(1)), 'cst'], [E.N(1), 'cst']);
+    cand.push([E.copie(a), 'cst'], [E.N(1), 'cst'], [E.X, 'cst']);
   } else if (L && !E.hasRootX(a)) {
     // termes dans l'ordre d'écriture (le résultat garde cet ordre)
     const ordre = E.sommeMonomes(a) ? (a.t === 's' ? a.a : [a]).filter(b => !E.isConst(b)).map(b => [...E.toL(b)][0][0]) : [...L.keys()].sort((u, w) => w - u);
@@ -1753,9 +1832,12 @@ function creerFormule(ctx, cfg = {}) {
 
     function phasesDe(T) {
       const ph = [];
+      q.donnees = [];
       (function visite(T) {
         // formule annoncée par l'onglet : la question ne demande pas de la reconnaître
-        if (T.parent || !(cfg.sansOp && cfg.sansOp.includes(T.d.op))) ph.push({ type: 'op', T }); else q.sansOp = true;
+        // (aussi sous un nombre en facteur : 2√(4x − 1), la formule de √u reste donnée)
+        const haut = !T.parent || (T.parent.d.op === 'kf' && !T.parent.parent);
+        if (haut && cfg.sansOp && cfg.sansOp.includes(T.d.op)) q.donnees.push(T); else ph.push({ type: 'op', T });
         if (lv >= 2 && OPS_MORCEAUX.includes(T.d.op)) ph.push({ type: 'pieces', T });
         if (lv >= 3) T.kids.forEach(k => { if (aDecouper(k)) visite(k); });
       })(T);
@@ -1763,7 +1845,7 @@ function creerFormule(ctx, cfg = {}) {
     }
     function reset() {
       st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {} };
-      if (q.sansOp) valideOp({ T: q.T }, q.T.d.op);
+      q.donnees.forEach(T => valideOp({ T }, T.d.op));
       if (!q.phases.length) st.fini = true;
       dessiner();
     }
@@ -1993,6 +2075,13 @@ function creerFormule(ctx, cfg = {}) {
    glisser les tuiles f, g, f′, g′ (ou u, u′) dans les cases de la formule,
    puis faire défiler les lignes de simplification jusqu'à la forme finale.
    ===================================================================== */
+// phrase de la correction pour chaque étape de la simplification
+const DIRE_LIGNE = {
+  distribuer: 'On distribue : chaque terme du premier facteur multiplie chaque terme du second (suis les arcs).',
+  'calculer les produits': 'On calcule chaque produit, en faisant attention aux signes.',
+  'enlever les parenthèses': 'On enlève les parenthèses : le « − » devant change le signe de chaque terme.',
+  'réduire': 'On réduit : on regroupe les termes de même degré.'
+};
 const NOM_TUILE = { f: 'f', g: 'g', u: 'u', fp: 'f′', gp: 'g′', up: 'u′' };
 const COUL_TUILE = { f: 'f', g: 'g', u: 'u', fp: 'f', gp: 'g', up: 'u' };
 
@@ -2048,8 +2137,14 @@ function planDe(T, comp) {
       const termes = p.op === 'somme' ? k : [T];
       const parts = [];
       termes.forEach((t, i) => {
-        if (E.isConst(t.src)) return;
         const id = 't' + i;
+        // constante : sa dérivée (0) se choisit aussi ; un « − » devant reste devant la case
+        if (E.isConst(t.src)) {
+          const [sg, m] = E.splitSign(t.src);
+          p.choix.push({ id, etiquette: `(${E.html(m)})′`, morceau: m, props: propositions(m, comp) });
+          parts.push(sg ? E.G(trou(id)) : trou(id));
+          return;
+        }
         if (aDecouper(t)) { p.sous.push({ plan: planDe(t, comp), id }); parts.push(trou(id)); return; }
         const L = E.toL(t.src);
         if (L && [...L][0][0] >= 0) {
@@ -2081,6 +2176,15 @@ function sansCases(a) {
   for (const k of ['a', 'n', 'd', 'b']) { const c = a[k]; if (Array.isArray(c)) b[k] = c.map(sansCases); else if (c && c.t) b[k] = sansCases(c); }
   return b;
 }
+// formule d'un plan remplie avec les bonnes valeurs (avant que l'élève ne réponde)
+function remplieSol(p) {
+  const t = JSON.parse(JSON.stringify(p.tmpl), (k, v) => k === 'v' && v && typeof v === 'object' && !v.t && 'n' in v ? F(v.n, v.d) : v);
+  casesDe(t).forEach(h => {
+    const tu = p.tuiles.find(x => x[0] === h.id), c = p.choix.find(x => x.id === h.id), s = p.sous.find(x => x.id === h.id);
+    h.v = tu ? tu[1] : c ? c.props.find(o => !o.faute).node : s ? s.plan.deriv : null;
+  });
+  return t;
+}
 // cases d'une formule (dans l'ordre d'écriture)
 function casesDe(a, out = []) {
   if (!a || typeof a !== 'object') return out;
@@ -2105,7 +2209,11 @@ function creerRemplir(ctx) {
     ctx.svg.style.display = 'none';
     const zone = document.createElement('div');
     zone.className = 'zone-expr remplir';
-    zone.innerHTML = '<div class="expr"></div><div class="formule-nom"></div><div class="modele"></div><div class="lignes-sol"></div><div class="ex-nav"></div>';
+    zone.innerHTML = '<div class="expr"></div><div class="formule-nom"></div><div class="modele"></div><div class="lignes-sol"></div><div class="ex-nav"></div>'
+      // fenêtre de la simplification : toute la place pour écrire les lignes du calcul
+      + '<div class="simpl" role="dialog" aria-label="Simplification" hidden><div class="simpl-tete"><b>Simplifier</b><span class="m rappel"></span>'
+      + '<button class="btn simpl-x" aria-label="Fermer la simplification">✕</button></div>'
+      + '<div class="simpl-corps" aria-live="polite"></div><div class="simpl-nav"></div></div>';
     ctx.svg.parentNode.appendChild(zone);
     const $z = s => zone.querySelector(s);
     // flèches du clavier : ligne suivante / précédente de la simplification
@@ -2134,13 +2242,18 @@ function creerRemplir(ctx) {
         else if (!p.choix.length) q.phases.push({ type: 'auto', p });
       })(q.plan);
       // lignes de la correction écrite (après la formule remplie) : celles du moteur
-      q.lignes = E.etapes(a, { composees: comp }).slice(1);
+      const et = E.etapes(a, { composees: comp }), rempli = sansCases(remplieSol(q.plan));
+      q.lignes = et.slice(1);
+      // ligne de départ : la formule remplie (celle du moteur si elle s'écrit pareil : ses facteurs portent les arcs)
+      q.depart = E.html(et[0]) === E.html(rempli) ? et[0] : rempli;
+      const fin = E.D(a, { composees: comp });
+      if (!q.lignes.length && E.html(rempli) !== E.html(fin)) q.lignes = [fin];
       reset();
       if (!silencieux) setState();
 
     }
     function reset() {
-      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [] };
+      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false };
       sauterAuto();
       dessiner();
     }
@@ -2216,29 +2329,73 @@ function creerRemplir(ctx) {
       dessinerReponse();
     }
     function dessinerLignes() {
-      const L = $z('.lignes-sol'), nav = $z('.ex-nav');
-      const trouves = st.trouves.map(t => `<p class="fv feuille">${t}</p>`).join('');
-      const lignes = st.fini ? q.lignes.slice(0, st.ligne).map((l, i) =>
-        `<p class="ls${i === st.ligne - 1 ? ' new' : ''}"><span class="m">= ${E.html(l)}</span>${i === q.lignes.length - 1 ? ' <span class="fin">forme finale ✓</span>' : ''}</p>`).join('') : '';
-      L.innerHTML = trouves + lignes;
+      const L = $z('.lignes-sol'), nav = $z('.ex-nav'), pop = $z('.simpl');
+      L.innerHTML = st.trouves.map(t => `<p class="fv feuille">${t}</p>`).join('');
       L.scrollTop = L.scrollHeight;
-
+      const n = q.lignes.length;
+      pop.hidden = !st.fini || !n || st.ferme;
       if (!st.fini) { nav.style.display = 'none'; return; }
       nav.style.display = '';
-      const n = q.lignes.length;
       if (!n) { nav.innerHTML = `<span class="count">La formule remplie est déjà la forme finale ✓</span>`; return; }
-      nav.innerHTML = `<button class="btn" id="nPrec"${st.ligne ? '' : ' disabled'}>◀ Précédent</button><span class="count">Ligne ${st.ligne} / ${n}</span>`
+      nav.innerHTML = st.ferme ? '<button class="btn go" id="nOuvrir">Voir la simplification ▸</button>' : '';
+      if (st.ferme) { $z('#nOuvrir').onclick = () => { st.ferme = false; dessinerLignes(); }; return; }
+      dessinerSimpl();
+    }
+    // la fenêtre : la fonction en rappel, la formule remplie, puis une ligne par étape du calcul
+    function dessinerSimpl() {
+      const n = q.lignes.length, corps = $z('.simpl-corps');
+      $z('.rappel').innerHTML = '<i>f</i>(<i>x</i>) = ' + E.html(q.a);
+      $z('.simpl-x').onclick = () => { st.ferme = true; dessinerLignes(); };
+      const derniere = q.lignes[st.ligne - 1];
+      const arcs = !!(derniere && derniere.paires && derniere.paires.length);
+      // termes des facteurs distribués, repérés dans la ligne de départ
+      const marks = new Map();
+      if (arcs) derniere.paires.forEach((pr, k) => pr.forEach((ts, j) => ts.forEach((t, i) => marks.set(t, { id: k + '-' + j + '-' + i, cls: 'tm' }))));
+      corps.innerHTML = `<p class="ls depart"><i>f</i>′(<i>x</i>) = ${E.mathMarks(q.depart, marks)}</p>`
+        + q.lignes.slice(0, st.ligne).map((l, i) => `<p class="ls${i === st.ligne - 1 ? ' new' : ''}">${l.lab ? `<span class="eti">${l.lab}</span>` : ''}<span class="m">= ${E.html(l)}</span>`
+          + (i === n - 1 ? ' <span class="fin">forme finale ✓</span>' : '') + '</p>').join('');
+      corps.querySelectorAll('.ls').forEach(p => ajuste(p, 26, 12));
+      if (arcs) requestAnimationFrame(() => dessinerArcs(corps, derniere.paires));
+      const cur = corps.querySelector('.ls.new') || corps.querySelector('.ls');
+      requestAnimationFrame(() => { corps.scrollTop = Math.max(0, cur.offsetTop + cur.offsetHeight - corps.clientHeight + 8); });
+      const nv = $z('.simpl-nav');
+      nv.style.display = App.sol ? 'none' : '';          // pendant la correction animée, c'est le bandeau d'étapes qui avance
+      nv.innerHTML = `<button class="btn" id="nPrec"${st.ligne ? '' : ' disabled'}>◀ Précédent</button><span class="count">Ligne ${st.ligne} / ${n}</span>`
         + `<button class="btn go" id="nSuiv"${st.ligne < n ? '' : ' disabled'}>${st.ligne < n ? (st.ligne ? 'Ligne suivante ▶' : 'Simplifier ▶') : 'Compare avec ta feuille ✓'}</button>`
         + `<button class="btn" id="nTout"${st.ligne < n ? '' : ' disabled'}>▶▶ Tout afficher</button>`;
       $z('#nPrec').onclick = () => { st.ligne--; dessinerLignes(); };
       $z('#nSuiv').onclick = () => { st.ligne++; dessinerLignes(); if (st.ligne >= n && ctx.termine) ctx.termine(); };
       $z('#nTout').onclick = () => { st.ligne = n; dessinerLignes(); if (ctx.termine) ctx.termine(); };
     }
+    // arcs de la distributivité : chaque terme du 1er facteur relié à chaque terme du 2e (une couleur par terme)
+    const COUL_ARC = ['#007C74', '#A00058', '#EC6708', '#3B5C76', '#8A6D1D'];
+    function dessinerArcs(corps, paires) {
+      corps.querySelector('svg.arcs')?.remove();
+      const ligne = corps.querySelector('.ls.depart'), r0 = corps.getBoundingClientRect();
+      const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('class', 'arcs'); svg.setAttribute('aria-hidden', 'true');
+      svg.style.height = corps.scrollHeight + 'px';
+      let k = 0;
+      paires.forEach((pr, a) => pr[0].forEach((_, i) => pr[1].forEach((__, j) => {
+        const e1 = ligne.querySelector(`[data-id="${a}-0-${i}"]`), e2 = ligne.querySelector(`[data-id="${a}-1-${j}"]`);
+        if (!e1 || !e2) return;
+        const b1 = e1.getBoundingClientRect(), b2 = e2.getBoundingClientRect();
+        const x1 = b1.left + b1.width / 2 - r0.left, x2 = b2.left + b2.width / 2 - r0.left;
+        const y = Math.min(b1.top, b2.top) - r0.top + corps.scrollTop + 2, h = 10 + 6 * j + Math.min(16, Math.abs(x2 - x1) / 12);
+        const p = document.createElementNS(ns, 'path');
+        p.setAttribute('d', `M${x1} ${y}C${x1} ${y - h} ${x2} ${y - h} ${x2} ${y}`);
+        p.setAttribute('stroke', COUL_ARC[i % COUL_ARC.length]);
+        p.setAttribute('pathLength', '1');
+        p.style.animationDelay = (reducedMotion ? 0 : k++ * 0.3) + 's';
+        svg.appendChild(p);
+      })));
+      corps.appendChild(svg);
+    }
 
     /* ---------- zone réponse ---------- */
     function dessinerReponse() {
 
-      if (st.fini) { ctx.q.innerHTML = '<p class="qtitre">Formule remplie ✓</p><p class="qhint">Fais défiler les lignes de simplification sous la formule et compare avec ta feuille.</p>'; return; }
+      if (st.fini) { ctx.q.innerHTML = '<p class="qtitre">Formule remplie ✓</p><p class="qhint">Fais défiler la simplification, ligne par ligne, et compare avec ta feuille.</p>'; return; }
       const ph = phase(), p = ph.p;
       if (ph.type === 'choix') {
         ctx.q.innerHTML = '<p class="qtitre">Choisis la dérivée de chaque morceau :</p>' + p.choix.map((c, i) =>
@@ -2363,7 +2520,8 @@ function creerRemplir(ctx) {
       });
       // puis la simplification, ligne par ligne, jusqu'à la forme finale
       q.lignes.forEach((l, i) => steps.push({
-        say: i === q.lignes.length - 1 ? 'Voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
+        say: DIRE_LIGNE[l.lab] ? DIRE_LIGNE[l.lab] + (i === q.lignes.length - 1 ? ' Voilà la forme finale.' : '')
+          : i === q.lignes.length - 1 ? 'Voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
         run: async () => { st.ligne = i + 1; dessinerLignes(); }
       }));
       return { reset() { reset(); return {}; }, steps };
@@ -2392,7 +2550,8 @@ function creerRemplir(ctx) {
 function creerOnglet(cfg) {
   return function (ctx) {
     const niv = ctx.level;
-    ctx.tools.innerHTML = '<ol class="etapes" aria-label="Les quatre étapes">' + ['Formule', 'Dérivées', 'Remplir', 'Simplifier']
+    const formuleDonnee = !!(cfg.formule && cfg.formule.sansOp);
+    ctx.tools.innerHTML = '<ol class="etapes" aria-label="Les quatre étapes">' + [formuleDonnee ? 'Morceaux' : 'Formule', 'Dérivées', 'Remplir', 'Simplifier']
       .map((n, i) => '<li><b><span>' + (i + 1) + '</span></b>' + n + '</li>').join('') + '</ol>';
     const cours = cfg.cours ? exercicesCours(ctx, niv, (s, c) => charger(s, c)) : null;
     const s1 = creerFormule(ctx, cfg.formule || {});
@@ -2500,16 +2659,16 @@ register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et q
   accent: '#A00058', bg: '#F9EDF3',
   levels: [['', 'produits de binômes'], ['', 'quotients de binômes'], ['', 'polynômes plus longs, avec √x']],
   newLabel: () => null,
-  consigne: () => 'Produit ou quotient ? <b>Choisis la formule</b>, nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, remplis la formule, puis suis la simplification.',
-  create: creerOnglet({ genre: 'prodquot', comp: false })
+  consigne: () => 'Nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, <b>remplis la formule</b>, puis suis la simplification.',
+  create: creerOnglet({ genre: 'prodquot', comp: false, formule: { sansOp: ['produit', 'quotient'] } })
 });
 
 register({ id: 'composee', title: 'Composées', short: 'Composées',
   accent: '#EC6708', bg: '#FDF1E7',
   levels: [['', '(ax + b)ⁿ'], ['', '√u'], ['', '1/u, k/uⁿ, u du 2e degré']],
   newLabel: () => null,
-  consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. <b>Choisis la formule</b>, nomme <i>u</i>, choisis sa dérivée <i>u</i>′, remplis la formule, puis suis la simplification.',
-  create: creerOnglet({ genre: 'composee', comp: true, formule: { ops: ['puissance', 'racine', 'inverse'] } })
+  consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. Nomme <i>u</i>, choisis sa dérivée <i>u</i>′, <b>remplis la formule</b>, puis suis la simplification.',
+  create: creerOnglet({ genre: 'composee', comp: true, formule: { sansOp: ['kf', 'puissance', 'racine', 'inverse'] } })
 });
 
 register({ id: 'defi', title: 'Défi', short: 'Défi',
