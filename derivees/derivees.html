@@ -334,15 +334,6 @@ button, input { font: inherit; }
 .puce.place { opacity: .55; }
 .question .qhint { text-align: center; }
 /* fenêtre « Exercice du cours » */
-.banque-pop { position: absolute; inset: 6px; z-index: 20; background: #fff; border-radius: 12px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; animation: reveal .3s ease; }
-.bp-tete { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); font-family: var(--ui); }
-.bp-x { padding: 4px 10px; }
-.bp-corps { overflow-y: auto; padding: 4px 14px 14px; }
-.bp-niv { font: 700 12px var(--ui); color: var(--accent); text-transform: uppercase; letter-spacing: .6px; margin: 12px 0 6px; }
-.bp-niv small { text-transform: none; color: var(--ink3); font-weight: 400; }
-.bp-liste { display: flex; flex-wrap: wrap; gap: 6px; }
-.bp-f { border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 4px 9px; cursor: pointer; font-size: 17px; color: var(--ink); }
-.bp-f:hover { border-color: var(--accent); background: var(--bg); }
 #fig { position: relative; }
 .figure-card .zone-expr ~ svg { display: none; }
 /* le style partagé de la 4e étire les SVG de la figure : pas les signes racine ni les parenthèses */
@@ -379,20 +370,10 @@ button, input { font: inherit; }
 .ex-nav .btn { font-size: 12.5px; padding: 7px 12px; }
 .ex-nav .btn.go { background: var(--accent); border-color: var(--accent); color: #fff; }
 /* termes d'une somme à placer sur une ligne du formulaire */
-.r-l { --c: #3B5C76; }
-.expr .bx.terme-ligne { cursor: grab; touch-action: none; }
 .expr .bx.faux { --c: var(--ko); border: .06em solid var(--ko); background: var(--ko-bg); }
-.question:has(.lignes) { display: block; text-align: left; font-size: 16px; padding: 10px 12px 12px; }
-.lignes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.ligne { position: relative; border: 1.5px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 8px; cursor: pointer; color: var(--ink); font-size: 17px; min-height: 46px; transition: border-color .2s, background .2s; }
-.ligne:hover, .ligne.survol { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, #fff); }
-.ligne .nb { position: absolute; top: -7px; right: -6px; font: 700 11px/18px var(--ui); min-width: 18px; padding: 0 4px; border-radius: 9px; color: #fff; background: #3B5C76; }
 .fantome { position: fixed; z-index: 100; pointer-events: none; transform: translate(-50%, -60%) scale(1.06); }
 .fantome > .m { display: inline-block; background: #fff; border: 2px solid var(--accent); border-radius: 8px; padding: 2px 10px; font-size: 24px; box-shadow: var(--shadow-lg); }
 .fantome > .puce { box-shadow: var(--shadow-lg); }
-.ligne { min-height: 38px; padding: 3px 6px; font-size: 15.5px; }
-.lignes { grid-template-columns: repeat(3, 1fr); gap: 5px; }
-@media (max-width: 560px) { .lignes { grid-template-columns: 1fr 1fr; } }
 /* ---------- onglet « Remplir la formule » ---------- */
 .zone-expr.remplir { justify-content: flex-start; gap: 8px; padding-top: 6px; }
 .zone-expr.remplir .expr { flex: none; max-height: none; font-size: 30px; padding-top: .3em; }
@@ -437,6 +418,18 @@ button, input { font: inherit; }
 .etapes li.fait b span { display: none; }
 .etapes li.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 @media (max-width: 560px) { .etapes li { font-size: 10.5px; padding: 3px 7px; } }
+
+/* Onglet « Exercices du cours » : icône et rangée de numéros */
+.tab .ico { display: block; width: 20px; height: 20px; margin: -3px 0; flex-shrink: 0; }
+.tab .ico svg { display: block; width: 100%; height: 100%; }
+.ex-cours { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; width: 100%; }
+.ex-cours .grp { font: 700 12px var(--ui); color: var(--accent); margin-right: 2px; }
+.ex-cours .sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 6px; }
+.ex-cours .num { min-width: 27px; height: 27px; padding: 0 4px; border-radius: 7px; border: 1.5px solid var(--line); background: #fff; color: var(--ink2); font: 600 12.5px var(--ui); cursor: pointer; }
+.ex-cours .num:hover { border-color: var(--accent); color: var(--accent); }
+.ex-cours .num.fait { border-color: var(--ok); color: var(--ok); background: var(--ok-bg); }
+.ex-cours .num.on { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent); }
+@media (max-width: 560px) { .ex-cours .num { min-width: 24px; height: 24px; font-size: 11.5px; } }
 
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
@@ -720,7 +713,7 @@ function renderTabs() {
     const b = document.createElement('button');
     b.className = 'tab' + (App.m === m ? ' current' : '');
     b.style.setProperty('--c', m.accent);
-    b.innerHTML = `<span class="n"></span><span class="t">${m.short}</span>`;
+    b.innerHTML = (m.icone ? `<span class="ico">${m.icone}</span>` : '<span class="n"></span>') + `<span class="t">${m.short}</span>`;
     b.onclick = () => openEx(m.id);
     $('tabs').appendChild(b);
   });
@@ -786,7 +779,7 @@ function setState() {
   $('bNext').classList.toggle('pulse', App.solved);
   const s = App.score[App.m.id + '.' + App.level[App.m.id]] || 0;
   if (App.level[App.m.id] === 0) { $('score').innerHTML = 'Mode Explorer : manipule librement, rien n’est noté.'; return; }
-  $('score').innerHTML = s ? `Réussies à ce niveau : <b>${s}</b>` : 'Chaque question est tirée au hasard : recommence autant que tu veux !';
+  $('score').innerHTML = s ? `Réussies à ce niveau : <b>${s}</b>` : (App.m.scoreVide || 'Chaque question est tirée au hasard : recommence autant que tu veux !');
 }
 function doCheck() {
   if (App.solved || !App.inst.check || App.level[App.m.id] === 0) return;
@@ -835,7 +828,9 @@ function showStep(i) {
     if (rows.length && (/^\s*=/.test(l) || (item && prev === 'item'))) rows[rows.length - 1].push(html); else rows.push([html]);
     prev = item ? 'item' : 'eq';
   });
-  feedback('sol', '▶ Correction', rows.map(r => `<p class="step calcs">${r.join(' ')}</p>`).join(''));
+  // pas de ligne écrite (la figure porte tout le calcul) : pas de cadre de correction
+  if (rows.length) feedback('sol', '▶ Correction', rows.map(r => `<p class="step calcs">${r.join(' ')}</p>`).join(''));
+  else clearFeedback();
   play(async () => {
     const S = sol.reset();
     animScale = 0;                           // les étapes déjà vues sont rejouées instantanément
@@ -1519,7 +1514,7 @@ const lin = (A = 5, B = 7) => {
 const lin2 = () => { const a = nz(-4, 4), b = nz(-6, 6); return polyTxt(pick([[[1, 2], [a, 1], [b, 0]], [[nz(-3, 3), 2], [b, 0]], [[a, 1], [nz(-3, 3), 2]]])); };
 const entre = s => `(${s})`;
 
-// Somme avec des termes « déguisés » : 3/x², x/4, x²/2, k√x… (chaque terme se place sur une ligne du formulaire)
+// Somme avec des termes « déguisés » : 3/x², x/4, x²/2, k√x…
 function sommeDeguisee() {
   const terme = kind => {
     const a = rnd(2, 6);
@@ -1545,8 +1540,8 @@ const PISTES_FAUTES = {
   cst: 'La dérivée d’un nombre seul (une constante) est 0.',
   signe: 'Attention au signe : (1/<i>x</i>)′ = −1/<i>x</i><sup>2</sup>. Avec un exposant négatif, <i>n</i> est négatif.',
   neg: 'Avec un exposant négatif, <i>n</i> − 1 « descend » : <i>x</i><sup>−2</sup> devient <i>x</i><sup>−3</sup>, pas <i>x</i><sup>−1</sup>.',
-  rac: 'Regarde la ligne du formulaire : (√<i>x</i>)′ = 1/(2√<i>x</i>).',
-  autre: 'Regarde la ligne du formulaire qui correspond à ce morceau.'
+  rac: 'Attention : (√<i>x</i>)′ = 1/(2√<i>x</i>).',
+  autre: 'Ce n’est pas la bonne dérivée : refais le calcul pour ce morceau.'
 };
 function propositions(a, comp = true) {
   const vraie = E.D(a, { composees: comp });
@@ -1590,34 +1585,6 @@ function propositions(a, comp = true) {
 const OPS_MORCEAUX = ['produit', 'quotient', 'puissance', 'racine', 'inverse'];
 const NOM_OP = { somme: 'Somme', kf: 'k·f', produit: 'Produit', quotient: 'Quotient', puissance: 'Composée uⁿ', inverse: 'Composée 1/u', racine: 'Composée √u', base: 'Formule de base', cst: 'Constante' };
 
-// Lignes du formulaire (formules de base) : pour placer chaque terme d'une somme
-const FR = (a, b) => `<span class="fq pt"><span>${a}</span><span>${b}</span></span>`;
-const RACX = () => E.html(E.R(E.X));
-const LIGNES = [
-  { id: 'cst', lab: 'k', f: '<i>k</i>', d: '0' },
-  { id: 'x', lab: 'x', f: '<i>x</i>', d: '1' },
-  { id: 'kx', lab: 'kx', f: '<i>kx</i>', d: '<i>k</i>' },
-  { id: 'x2', lab: 'x²', f: '<i>x</i><sup>2</sup>', d: '2<i>x</i>' },
-  { id: 'xn', lab: 'xⁿ', f: '<i>x</i><sup><i>n</i></sup>', d: '<i>n</i>·<i>x</i><sup><i>n</i>−1</sup>' },
-  { id: 'inv', lab: '1/x', f: FR(1, '<i>x</i>'), d: FR('−1', '<i>x</i><sup>2</sup>') },
-  { id: 'rac', lab: '√x', f: null, d: null }
-];
-const LIG = id => LIGNES.find(l => l.id === id);
-// terme simple → lignes acceptées (la première est celle de la correction), k et n
-function ligneDe(a) {
-  if (E.isConst(a)) return { ok: ['cst'] };
-  const L = E.toL(a);
-  if (!L) {                                   // k√x
-    const d = decoupe(a);
-    let k = d.k || (a.t === 'p' ? E.toL(E.P(...a.a.filter(E.isConst))).get(0) : F(1));
-    return { ok: ['rac'], k };
-  }
-  const [[n, c]] = [...L], un = c.n === c.d;
-  if (n === 1) return { ok: un ? ['x', 'kx'] : ['kx'], k: c, n };
-  if (n === 2) return { ok: ['x2', 'xn'], k: c, n };
-  if (n === -1) return { ok: ['inv', 'xn'], k: c, n };
-  return { ok: ['xn'], k: c, n };
-}
 // glisser un élément (étiquette, terme) vers une cible ; un simple clic appelle onClic
 function glisserVers(el, fantomeHTML, selCible, onDepot, onClic) {
   el.addEventListener('pointerdown', e => {
@@ -1642,24 +1609,6 @@ function glisserVers(el, fantomeHTML, selCible, onDepot, onClic) {
     };
     addEventListener('pointermove', bouge); addEventListener('pointerup', fin); addEventListener('pointercancel', fin);
   });
-}
-
-// Fenêtre « Exercice du cours » : les fonctions des banques A et B (commune aux onglets)
-function choixBanque(zone, onChoix, quelles = ['A', 'B']) {
-  zone.querySelector('.banque-pop')?.remove();
-  const pop = document.createElement('div');
-  pop.className = 'banque-pop';
-  let h = '<div class="bp-tete"><b>📘 Exercices du cours</b><button class="btn bp-x" aria-label="Fermer">✕</button></div><div class="bp-corps">';
-  for (const b of quelles) BANQUES[b].forEach((lst, i) => {
-    if (!lst) return;
-    h += `<p class="bp-niv">Banque ${b} · niveau ${i + 1} <small>(p. ${b === 'A' ? (i < 2 ? 11 : 12) : 17})</small></p><div class="bp-liste">`;
-    lst.forEach((s, j) => { h += `<button class="bp-f" data-b="${b}" data-s="${s}" title="${b}${i + 1}, n° ${j + 1}">${E.math(E.parse(s))}</button>`; });
-    h += '</div>';
-  });
-  pop.innerHTML = h + '</div>';
-  zone.appendChild(pop);
-  pop.querySelector('.bp-x').onclick = () => pop.remove();
-  pop.querySelectorAll('.bp-f').forEach(b => { b.onclick = () => { pop.remove(); onChoix(b.dataset.s, b.dataset.b); }; });
 }
 
 // Expression ajustée à la largeur de la zone (police réduite si besoin)
@@ -1773,8 +1722,7 @@ function genFonction(genre, niv) {
   return 'x^2+1';
 }
 
-// Étapes 1 et 2 du déroulé : reconnaître la formule (ou placer chaque terme sur sa ligne du formulaire),
-// puis nommer les morceaux f, g, u. cfg.sansOp : formules annoncées par l'onglet (le premier choix est sauté) ;
+// Étape 1 du déroulé : reconnaître la formule, puis nommer les morceaux f, g, u. cfg.sansOp : formules annoncées par l'onglet (le premier choix est sauté) ;
 // cfg.ops : formules proposées au premier choix.
 function creerFormule(ctx, cfg = {}) {
     const lv = 3;
@@ -1809,15 +1757,12 @@ function creerFormule(ctx, cfg = {}) {
         // formule annoncée par l'onglet : la question ne demande pas de la reconnaître
         if (T.parent || !(cfg.sansOp && cfg.sansOp.includes(T.d.op))) ph.push({ type: 'op', T }); else q.sansOp = true;
         if (lv >= 2 && OPS_MORCEAUX.includes(T.d.op)) ph.push({ type: 'pieces', T });
-        if (lv >= 2 && !T.parent && T.d.op === 'somme' && termesBase(T).length) ph.push({ type: 'lignes', T });
         if (lv >= 3) T.kids.forEach(k => { if (aDecouper(k)) visite(k); });
       })(T);
       return ph;
     }
-    // termes d'une somme qui sont des formules de base (ou k × formule de base, ou constantes)
-    const termesBase = T => T.kids.filter(k => !k.kids.length && ['base', 'kf', 'cst'].includes(k.d.op));
     function reset() {
-      st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {}, ligne: {}, selT: null, faux: null };
+      st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {} };
       if (q.sansOp) valideOp({ T: q.T }, q.T.d.op);
       if (!q.phases.length) st.fini = true;
       dessiner();
@@ -1843,24 +1788,12 @@ function creerFormule(ctx, cfg = {}) {
           let n = 0; for (let p = T.parent; p; p = p.parent) if (etiquette(p)) n++;
           if (n) m.cls += ' lab-d' + Math.min(n, 3);
         }
-        if (ph && ph.type === 'lignes' && termesBase(ph.T).includes(T)) {
-          m.cls += ' cible terme-ligne';
-          if (st.selT === T.id) m.cls += ' choisissable';
-          if (st.faux === T.id) m.cls += ' faux';
-        }
-        if (st.ligne[T.id]) { m.lab = LIG(st.ligne[T.id]).lab; m.cls += ' r-l'; }
         if (ph && ph.T === T && ph.type === 'op') m.cls += ' courant';
         if (st.sel && ph && ph.type === 'pieces' && T.parent === ph.T) m.cls += ' choisissable';
         if (m.cls || m.op || m.lab) marks.set(T.node, m);
       }
-      elExpr.innerHTML = E.mathMarks(q.T.node, marks);
+      elExpr.innerHTML = '<span class="m"><i>f</i>(<i>x</i>) = </span>' + E.mathMarks(q.T.node, marks);
       requestAnimationFrame(() => ajuste(elExpr));
-      // termes à glisser sur une ligne du formulaire
-      elExpr.querySelectorAll('.bx.terme-ligne').forEach(b => {
-        const T = q.tous.find(t => t.id === b.dataset.id);
-        glisserVers(b, `<span class="m">${E.math(T.node)}</span>`, '.question .ligne',
-          c => placerTerme(T, c.dataset.l), () => { st.selT = st.selT === T.id ? null : T.id; dessiner(); });
-      });
       // formules déjà trouvées, dans l'ordre
       elVues.innerHTML = q.tous.filter(T => st.ouverts.has(T.id)).map(T => ligneFormule(T)).join('');
       elDefis.innerHTML = '';
@@ -1874,58 +1807,18 @@ function creerFormule(ctx, cfg = {}) {
     }
     function ligneFormule(T) {
       const op = st.opDe[T.id] || T.d.op, F0 = FORMULES[op];
-      if (!T.kids.length && ['base', 'kf', 'cst'].includes(op)) {
-        const qui = T.parent ? `${E.math(T.node)} : ` : '';
-        return `<p class="fv feuille">${qui}<b>${op === 'kf' ? 'Nombre × fonction' : op === 'cst' ? 'Constante' : 'Formule de base'}</b> <span class="m">${ligneBase(T.src)}</span></p>`;
-      }
       const qui = T.parent ? `<span class="qui r-${T.role}">${T.role === 'terme' ? 'terme' : T.role}</span> ${E.math(T.node)} : ` : '';
       const n = (op === 'puissance') ? ` <span class="ici">(ici <i>n</i> = ${numStr(T.d.n)})</span>` : '';
       const d = F0.d ? `(${F0.f})′ = ${F0.d}` : F0.f;
       return `<p class="fv">${qui}<b>${F0.nom}</b> <span class="m">${d}</span>${n}</p>`;
     }
 
-    // ligne du formulaire d'une formule de base (ou k × formule de base)
-    function ligneBase(a) {
-      if (E.isConst(a)) return '(<i>k</i>)′ = 0';
-      const L = E.toL(a);
-      const rac = E.html(E.R(E.X));
-      let k = null, row;
-      if (L) {
-        const [[n, c]] = [...L];
-        if (n === 1) return c.n === c.d ? '(<i>x</i>)′ = 1' : `(<i>kx</i>)′ = <i>k</i> <span class="ici">(ici <i>k</i> = ${fracHTML(c)})</span>`;
-        if (c.n !== c.d) k = c;
-        row = n === -1 ? '(<span class="fq pt"><span>1</span><span><i>x</i></span></span>)′ = <span class="fq pt"><span>−1</span><span><i>x</i><sup>2</sup></span></span>'
-          : n === 2 ? '(<i>x</i><sup>2</sup>)′ = 2<i>x</i>'
-          : `(<i>x</i><sup><i>n</i></sup>)′ = <i>n</i>·<i>x</i><sup><i>n</i>−1</sup> <span class="ici">(ici <i>n</i> = ${numStr(n)})</span>`;
-      } else {
-        row = `(${rac})′ = <span class="fq pt"><span>1</span><span>2${rac}</span></span>`;
-        const d = decoupe(a);
-        if (d.k && d.k.n !== d.k.d) k = d.k;
-        else if (a.t === 'p') k = E.toL(E.P(...a.a.filter(E.isConst))).get(0);
-      }
-      return k ? `(<i>k</i>·<i>f</i>)′ = <i>k</i>·<i>f</i>′ avec <i>k</i> = ${fracHTML(k)} et ${row}` : row;
-    }
 
     /* ---------- zone réponse (panneau de gauche) ---------- */
     function dessinerReponse() {
 
       if (st.fini) { ctx.q.innerHTML = `<p class="qtitre">Formules trouvées ✓</p><p class="qhint">Elles sont écrites sous la fonction. Passe à une autre question !</p>`; return; }
       const ph = phase();
-      if (ph.type === 'lignes') {
-        const ts = termesBase(ph.T);
-        ctx.q.innerHTML = `<p class="qtitre">Sur quelle ligne du formulaire va chaque terme ?</p><div class="lignes">`
-          + LIGNES.map(l => {
-            const n = ts.filter(t => st.ligne[t.id] === l.id).length;
-            const f = l.f || RACX(), d = l.d || FR(1, '2' + RACX());
-            return `<button class="ligne" data-l="${l.id}"><span class="m">(${f})′ = ${d}</span>${n ? `<span class="nb">${n}</span>` : ''}</button>`;
-          }).join('')
-          + '</div><p class="qhint">Glisse chaque terme sur sa ligne (ou clique sur le terme, puis sur la ligne).</p>';
-        ctx.q.querySelectorAll('.ligne').forEach(b => b.onclick = () => {
-          const T = q.tous.find(t => t.id === st.selT);
-          if (T) placerTerme(T, b.dataset.l);
-        });
-        return;
-      }
       if (ph.type === 'op') {
         const quoi = ph.T.parent ? `Pour dériver <span class="qui r-${ph.T.role}">${ph.T.role === 'terme' ? 'ce terme' : ph.T.role}</span>, quelle formule ?` : 'Quelle formule en premier ?';
         const tout = ORDRE_FORMULES.filter(o => q.comp || !FORMULES[o].comp);
@@ -1951,14 +1844,9 @@ function creerFormule(ctx, cfg = {}) {
     // clic sur un morceau : on y pose l'étiquette sélectionnée (ou la suivante)
     elExpr.addEventListener('click', e => {
       const bx = e.target.closest('.bx.cible');
-      if (!bx || App.sol || bx.classList.contains('terme-ligne')) return;
+      if (!bx || App.sol) return;
       poser(q.tous.find(t => t.id === bx.dataset.id));
     });
-    function placerTerme(T, l) {
-      st.ligne[T.id] = l; st.selT = null; st.faux = null;
-      ctx.changed();
-      dessiner();
-    }
     function poser(T, rChoisi) {
       const ph = phase();
       if (!ph || ph.type !== 'pieces' || T.parent !== ph.T) return;
@@ -1994,14 +1882,6 @@ function creerFormule(ctx, cfg = {}) {
         valideOp(ph, st.choix);
         return suite(`C’est bien ${article(st.choix)}.`);
       }
-      if (ph.type === 'lignes') {
-        const ts = termesBase(ph.T);
-        if (ts.some(t => !st.ligne[t.id])) return { ok: false, empty: true, msg: 'Place chaque terme sur une ligne du formulaire.' };
-        const faux = ts.find(t => !ligneDe(t.src).ok.includes(st.ligne[t.id]));
-        if (faux) { st.faux = faux.id; dessiner(); return { ok: false, msg: pisteLigne(faux) }; }
-        ts.forEach(t => st.ouverts.add(t.id));
-        return suite('Chaque terme est sur la bonne ligne.');
-      }
       const roles = rolesDe(ph), kids = ph.T.kids;
       if (roles.some(r => !kids.some(k => st.lab[k.id] === r))) return { ok: false, empty: true, msg: 'Place chaque étiquette sur un morceau.' };
       const juste = kids.every((k, i) => {
@@ -2035,15 +1915,6 @@ function creerFormule(ctx, cfg = {}) {
       if (op === 'kf' && T.src.t === 'q') return 'On divise par un <b>nombre</b> : c’est un nombre × une fonction (diviser par 2, c’est multiplier par ½).';
       return 'Ce n’est pas la formule à appliquer en premier. Regarde comment sont reliés les <b>grands morceaux</b> de la fonction : par + ou −, par ×, par une barre de fraction, par une puissance, par une racine ? (💡 L’indice les encadre.)';
     }
-    function pisteLigne(T) {
-      const a = T.src, li = ligneDe(a), mis = st.ligne[T.id], t = E.math(T.node);
-      if (li.ok[0] === 'cst') return `${t} est une constante : il n’y a pas de <i>x</i>.`;
-      if (li.ok[0] === 'rac') return `Dans ${t}, il y a une racine : quelle ligne contient √<i>x</i> ?`;
-      if (mis === 'inv' && li.n !== -1) return `${t} n’est pas « nombre × 1/<i>x</i> » : 1/<i>x</i>${li.n < -1 ? '<sup>' + (-li.n) + '</sup>' : ''} s’écrit avec un exposant <b>négatif</b>.`;
-      if (li.n < 0) return `Réécris ${t} avec un exposant négatif : 1/<i>x</i><sup>${-li.n}</sup> = <i>x</i><sup>−${-li.n}</sup>.`;
-      if (li.n === 1) return `Dans ${t}, <i>x</i> n’a pas d’exposant : le nombre devant <i>x</i>, c’est <i>k</i>.`;
-      return `Écris ${t} sous la forme « nombre × … » : le nombre, c’est <i>k</i> ; regarde l’exposant de <i>x</i>.`;
-    }
     function pistePieces(ph) {
       const op = st.opDe[ph.T.id] || ph.T.d.op;
       if (op === 'quotient') return '<i>f</i> est en haut (le numérateur), <i>g</i> en bas (le dénominateur).';
@@ -2057,7 +1928,6 @@ function creerFormule(ctx, cfg = {}) {
         if (!n) return 'Cette fonction est simple : regarde le formulaire, lignes « formules de base » et « opérations ».';
         return `Voici ${n > 1 ? 'les grands morceaux' : 'le grand morceau'} de la fonction (encadré${n > 1 ? 's' : ''}). Comment ${n > 1 ? 'sont-ils reliés' : 'est-il « emballé »'} : par + ou −, par ×, par une barre de fraction, par une puissance, par une racine ?`;
       }
-      if (ph.type === 'lignes') return 'Écris chaque terme sous la forme « nombre × … » : le nombre, c’est <i>k</i>, et ce qui reste doit être une ligne du formulaire. Attention : 1/<i>x</i><sup>2</sup> = <i>x</i><sup>−2</sup>, et <i>x</i>/3 = ⅓·<i>x</i>.';
       return pistePieces(ph);
     }
 
@@ -2070,7 +1940,6 @@ function creerFormule(ctx, cfg = {}) {
           const op = T.d.op, F0 = FORMULES[op];
           steps.push({
             say: `${qui} est ${article(op)}. ${raison(T)}`,
-            write: `<b>${F0.nom}</b> <span class="m">${F0.d ? `(${F0.f})′ = ${F0.d}` : F0.f}</span>`,
             run: async () => {
               st.choix = op; dessinerReponse();
               await wait(500);
@@ -2078,22 +1947,10 @@ function creerFormule(ctx, cfg = {}) {
               await wait(700);
             }
           });
-        } else if (ph.type === 'lignes') {
-          const ts = termesBase(T);
-          steps.push({
-            say: 'Chaque terme s’écrit « nombre × ligne du formulaire » : le nombre, c’est <i>k</i>.',
-            write: ts.map(explique).join(' &nbsp;·&nbsp; '),
-            run: async () => {
-              for (const t of ts) { st.ligne[t.id] = ligneDe(t.src).ok[0]; dessiner(); await wait(450); }
-              ts.forEach(t => st.ouverts.add(t.id));
-              finPhase(j);
-            }
-          });
         } else {
           const roles = rolesDe(ph);
           steps.push({
             say: T.kids.map((k, i) => `<span class="qui r-${roles[i]}">${roles[i]}</span> = ${E.math(k.node)}`).join(' ; ') + '.',
-            write: T.kids.map((k, i) => `<span class="qui r-${roles[i]}">${roles[i]}</span> = ${E.math(k.node)}`).join(' &nbsp; '),
             run: async () => {
               for (let i = 0; i < T.kids.length; i++) { st.lab[T.kids[i].id] = roles[i]; dessiner(); await wait(450); }
               T.kids.forEach(k => { st.tagRole[k.id] = st.lab[k.id]; });
@@ -2103,14 +1960,6 @@ function creerFormule(ctx, cfg = {}) {
         }
       });
       return { reset() { reset(); return {}; }, steps };
-    }
-    // « 3/x² = 3·x⁻² : ligne xⁿ »
-    function explique(T) {
-      const li = ligneDe(T.src), l = LIG(li.ok[0]), t = E.math(T.node);
-      let r = '';
-      if (li.n !== undefined && li.n < -1) r = ` = ${fracHTML(li.k)}·<i>x</i><sup>${numStr(li.n)}</sup>`;
-      else if (li.n === -1 && li.k.n !== li.k.d) r = ` = ${fracHTML(li.k)}·${FR(1, '<i>x</i>')}`;
-      return `${t}${r} : ligne <b>${l.lab}</b>`;
     }
     function finPhase(j) {
       st.choix = null; st.sel = null;
@@ -2133,7 +1982,7 @@ function creerFormule(ctx, cfg = {}) {
     return {
       zone, charger, dessiner, phase: () => phase(), estFini: () => !!(st && st.fini), source: () => q && q.src,
       check, hint, solve,
-      edited() { if (st && st.faux) { st.faux = null; dessiner(); } },
+      edited() {},
       debug: () => ({ q, st })
     };
   }
@@ -2204,8 +2053,10 @@ function planDe(T, comp) {
         if (aDecouper(t)) { p.sous.push({ plan: planDe(t, comp), id }); parts.push(trou(id)); return; }
         const L = E.toL(t.src);
         if (L && [...L][0][0] >= 0) {
-          p.choix.push({ id, etiquette: `(${E.html(t.src)})′`, morceau: t.src, props: propositions(t.src, comp) });
-          parts.push(trou(id));
+          // terme précédé d'un « − » : le signe reste devant la case, on dérive le terme sans son signe
+          const neg = [...L][0][1].n < 0, m = neg ? E.fromL(new Map([...L].map(([n, c]) => [n, fneg(c)]))) : t.src;
+          p.choix.push({ id, etiquette: `(${E.html(m)})′`, morceau: m, props: propositions(m, comp) });
+          parts.push(neg ? E.G(trou(id)) : trou(id));
           return;
         }
         // k·f avec f = 1/xⁿ ou √x
@@ -2221,6 +2072,14 @@ function planDe(T, comp) {
     }
   }
   return p;
+}
+// formule remplie écrite sans ses cases (chaque case remplacée par sa valeur)
+function sansCases(a) {
+  if (!a || typeof a !== 'object') return a;
+  if (a.t === 'h') return a.v;
+  const b = Object.assign({}, a);
+  for (const k of ['a', 'n', 'd', 'b']) { const c = a[k]; if (Array.isArray(c)) b[k] = c.map(sansCases); else if (c && c.t) b[k] = sansCases(c); }
+  return b;
 }
 // cases d'une formule (dans l'ordre d'écriture)
 function casesDe(a, out = []) {
@@ -2299,7 +2158,9 @@ function creerRemplir(ctx) {
       const { parent, s } = sousDe(p);
       st.valeur[parent.T.id + ':' + s.id] = p.deriv;
       const nom = s.id[0] === 't' ? 'terme' : NOM_TUILE[s.id];
-      st.trouves.push(`<span class="qui r-${s.id[0] === 't' ? 'terme' : s.id[0]}">${nom}</span> <span class="m">(${E.html(p.T.src)})′ = ${E.html(p.deriv)}</span>`);
+      // la formule remplie, puis la dérivée simplifiée (si elle s'écrit autrement)
+      const brut = E.html(sansCases(remplie(p, true))), net = E.html(p.deriv);
+      st.trouves.push(`<span class="qui r-${s.id[0] === 't' ? 'terme' : s.id[0]}">${nom}</span> <span class="m">(${E.html(p.T.src)})′ = ${brut}${brut !== net ? ' = ' + net : ''}</span>`);
     }
     function sauterAuto() {
       while (st.i < q.phases.length && q.phases[st.i].type === 'auto') { terminerPlan(q.phases[st.i].p); st.i++; }
@@ -2336,7 +2197,7 @@ function creerRemplir(ctx) {
       // fonction (ou morceau emboîté) en haut, morceaux encadrés avec le nom de leur tuile
       const marks = new Map();
       p.tuiles.forEach(([r], i) => { const kid = p.T.kids[i]; if (kid) marks.set(kid.node, { id: 'k' + i, cls: ' r-' + r + ' lab-place', lab: r }); });
-      const nomSous = sd ? (sd.s.id[0] === 't' ? 'terme' : NOM_TUILE[sd.s.id]) : '';
+      const nomSous = sd ? (sd.s.id[0] === 't' ? 'terme' : sd.s.id[0]) : '';
       $z('.expr').innerHTML = (sd ? `<span class="qui r-${sd.s.id[0] === 't' ? 'terme' : sd.s.id[0]}">${nomSous}</span> <span class="m">= </span>` : '<span class="m"><i>f</i>(<i>x</i>) = </span>')
         + E.mathMarks(p.T.node, marks);
       requestAnimationFrame(() => ajuste($z('.expr'), 34, 18));
@@ -2461,7 +2322,7 @@ function creerRemplir(ctx) {
     function hint() {
       const ph = phase();
       if (!ph || st.fini) return null;
-      if (ph.type === 'choix') return 'Pour chaque morceau, cherche sa ligne dans le formulaire : (<i>x</i><sup><i>n</i></sup>)′ = <i>n</i>·<i>x</i><sup><i>n</i>−1</sup>, (1/<i>x</i>)′ = −1/<i>x</i><sup>2</sup>, (√<i>x</i>)′ = 1/(2√<i>x</i>), et la dérivée d’une constante est 0.';
+      if (ph.type === 'choix') return 'Rappelle-toi : (<i>x</i><sup><i>n</i></sup>)′ = <i>n</i>·<i>x</i><sup><i>n</i>−1</sup>, (1/<i>x</i>)′ = −1/<i>x</i><sup>2</sup>, (√<i>x</i>)′ = 1/(2√<i>x</i>), et la dérivée d’une constante est 0.';
       const F0 = FORMULES[ph.p.op];
       return `Compare case par case avec la formule <span class="m">(${F0.f})′ = ${F0.d}</span> : chaque case attend la tuile qui porte le même nom.`;
     }
@@ -2474,8 +2335,7 @@ function creerRemplir(ctx) {
         if (ph.type === 'auto') return;
         if (ph.type === 'choix') {
           steps.push({
-            say: 'On cherche la dérivée de chaque morceau dans le formulaire.',
-            write: p.choix.map(c => `<span class="m">${c.etiquette.length < 4 ? `<span class="qui r-${c.id[0]}">${c.etiquette}</span>` : c.etiquette} = ${E.html(c.props.find(o => !o.faute).node)}</span>`).join(' &nbsp; '),
+            say: (p.choix.length > 1 ? 'Les dérivées : ' : 'La dérivée : ') + p.choix.map(c => `<span class="m">${c.etiquette.length < 4 ? `<span class="qui r-${c.id[0]}">${c.etiquette}</span> = (${E.html(c.morceau)})′` : c.etiquette} = ${E.html(c.props.find(o => !o.faute).node)}</span>`).join(' ; ') + '.',
             run: async () => {
               for (const c of p.choix) { st.choix[c.id] = c.props.findIndex(o => !o.faute); dessinerReponse(); await wait(350); }
               p.choix.forEach(c => { st.valeur[p.T.id + ':' + c.id] = c.props.find(o => !o.faute).node; });
@@ -2484,10 +2344,10 @@ function creerRemplir(ctx) {
             }
           });
         } else {
-          const F0 = FORMULES[p.op];
+          const sd = p === q.plan ? null : sousDe(p), nom = sd && (sd.s.id[0] === 't' ? 'ce terme' : `<span class="qui r-${sd.s.id[0]}">${sd.s.id[0]}</span>`);
           steps.push({
-            say: `On place chaque tuile dans sa case : <span class="m">(${F0.f})′ = ${F0.d}</span>.`,
-            write: `<span class="m">${p === q.plan ? '<i>f</i>′(<i>x</i>) = ' : ''}${E.html(remplie(p, true))}</span>`,
+            say: sd ? `On remplit la formule pour ${nom} : chaque tuile va dans la case qui porte son nom. Sa dérivée servira ensuite dans la grande formule.`
+              : 'On remplit la formule : chaque tuile va dans la case qui porte son nom.',
             run: async () => {
               const cs = casesDe(p.tmpl);
               for (let i = 0; i < cs.length; i++) { st.cases[cle(p, cs[i], i)] = cs[i].id; dessiner(); await wait(300); }
@@ -2498,14 +2358,12 @@ function creerRemplir(ctx) {
       });
       // somme : les dérivées choisies s'assemblent d'elles-mêmes (pas de case à remplir)
       if (q.plan.auto) steps.push({
-        say: `On assemble : <span class="m">(${FORMULES[q.plan.op].f || "<i>f</i>"})′ = ${FORMULES[q.plan.op].d || "<i>f</i>′"}</span>.`,
-        write: `<span class="m"><i>f</i>′(<i>x</i>) = ${E.html(remplie(q.plan, true))}</span>`,
+        say: 'On met les dérivées des termes bout à bout : c’est <i>f</i>′(<i>x</i>).',
         run: async () => { dessiner(); }
       });
       // puis la simplification, ligne par ligne, jusqu'à la forme finale
       q.lignes.forEach((l, i) => steps.push({
         say: i === q.lignes.length - 1 ? 'Voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
-        write: `<span class="m">= ${E.html(l)}</span>`,
         run: async () => { st.ligne = i + 1; dessinerLignes(); }
       }));
       return { reset() { reset(); return {}; }, steps };
@@ -2528,14 +2386,15 @@ function creerRemplir(ctx) {
      2. choisir la dérivée de chaque morceau parmi trois       (creerRemplir)
      3. remplir la formule                                     (creerRemplir)
      4. faire défiler la simplification jusqu'à la forme finale (creerRemplir)
-   cfg : genre (clé de GENS), comp (composées permises), banques, formule (options de l'étape 1)
+   cfg : genre (clé de GENS), comp (composées permises), formule (options de l'étape 1),
+         cours (onglet « Exercices du cours » : les fonctions des banques, dans l'ordre)
    ===================================================================== */
 function creerOnglet(cfg) {
   return function (ctx) {
     const niv = ctx.level;
     ctx.tools.innerHTML = '<ol class="etapes" aria-label="Les quatre étapes">' + ['Formule', 'Dérivées', 'Remplir', 'Simplifier']
-      .map((n, i) => '<li><b><span>' + (i + 1) + '</span></b>' + n + '</li>').join('') + '</ol>'
-      + '<button class="btn" id="bBanque">📘 Exercice du cours</button>';
+      .map((n, i) => '<li><b><span>' + (i + 1) + '</span></b>' + n + '</li>').join('') + '</ol>';
+    const cours = cfg.cours ? exercicesCours(ctx, niv, (s, c) => charger(s, c)) : null;
     const s1 = creerFormule(ctx, cfg.formule || {});
     const s2 = creerRemplir(ctx);
     ctx.termine = () => doCheck();            // la simplification est arrivée à la forme finale
@@ -2571,14 +2430,12 @@ function creerOnglet(cfg) {
       montrer(2, false);
       if (msg !== '') feedback('ok', 'Oui ! ✓', msg + ' Passons aux dérivées : choisis celle de chaque morceau.');
     }
-    ctx.tools.querySelector('#bBanque').onclick = () =>
-      choixBanque((etape === 1 ? s1 : s2).zone, (s, b) => charger(s, b === 'B'), cfg.banques);
 
     return {
-      next() { charger(genFonction(cfg.genre, niv), cfg.comp); },
+      next() { if (cours) cours.suivant(); else charger(genFonction(cfg.genre, niv), cfg.comp); },
       check() {
         try {
-          if (etape === 2) return s2.check();
+          if (etape === 2) { const r = s2.check(); if (cours && r && r.ok && !App.revealed) cours.reussi(); return r; }
           const r = s1.check();
           if (r && r.ok) { passer(r.msg || ''); return null; }
           return r;
@@ -2597,8 +2454,37 @@ function creerOnglet(cfg) {
           steps: [...a.steps.map(st => vers(1, st)), ...b.steps.map(st => vers(2, st))]
         };
       },
+      charger,
       debug: () => ({ etape, src, s1: s1.debug(), s2: s2.debug() })
     };
+  };
+}
+
+/* ---------- onglet « Exercices du cours » ----------
+   Niveau 1 : banque A, niveau 1 ; niveaux 2 et 3 : banques A puis B du même niveau (la banque B n'a pas de niveau 1).
+   Une rangée de numéros au-dessus de la fonction : l'élève choisit l'exercice de son cahier. */
+function exercicesCours(ctx, niv, charger) {
+  const liste = [];
+  for (const b of ['A', 'B']) (BANQUES[b][niv - 1] || []).forEach((s, j) => liste.push({ b, n: j + 1, s, cle: b + niv + '-' + (j + 1) }));
+  const cleI = App.key + '.cours' + niv, cleF = App.key + '.coursFaits';
+  let i = Math.max(0, Math.min(+storeGet(cleI, 0) || 0, liste.length - 1)), premier = true;
+  const faits = new Set(storeGet(cleF, []));
+  const barre = document.createElement('div');
+  barre.className = 'ex-cours';
+  barre.setAttribute('role', 'group');
+  barre.setAttribute('aria-label', 'Exercices du cours');
+  ctx.tools.prepend(barre);
+  function dessiner() {
+    barre.innerHTML = ['A', 'B'].filter(b => liste.some(e => e.b === b)).map(b =>
+      `<span class="grp" title="Banque ${b}, p. ${b === 'A' ? (niv < 3 ? 11 : 12) : 17}">${b}${niv}</span>`
+      + liste.map((e, k) => e.b !== b ? '' : `<button class="num${k === i ? ' on' : ''}${faits.has(e.cle) ? ' fait' : ''}" data-k="${k}" title="Banque ${e.b}, niveau ${niv}, n° ${e.n}" aria-label="Exercice ${e.b}${niv} n° ${e.n}">${e.n}</button>`).join('')).join('<span class="sep"></span>');
+    barre.querySelectorAll('.num').forEach(bt => bt.onclick = () => { i = +bt.dataset.k; ouvrir(); setState(); });
+  }
+  function ouvrir() { storeSet(cleI, i); dessiner(); charger(liste[i].s, liste[i].b === 'B'); }
+  return {
+    // « Autre question » : l'exercice suivant de la liste (au premier affichage : le dernier ouvert)
+    suivant() { if (!premier) i = (i + 1) % liste.length; premier = false; ouvrir(); },
+    reussi() { faits.add(liste[i].cle); storeSet(cleF, [...faits]); dessiner(); }
   };
 }
 
@@ -2606,8 +2492,8 @@ register({ id: 'somme', title: 'Sommes et différences', short: 'Sommes',
   accent: '#007C74', bg: '#EAF5F3',
   levels: [['', 'xⁿ, kx, constantes'], ['', 'avec 1/x et √x'], ['', 'termes déguisés (3/x², x/4…)']],
   newLabel: () => null,
-  consigne: () => 'Une somme se dérive <b>terme par terme</b>. Place chaque terme sur sa ligne du formulaire, choisis sa dérivée, assemble, puis suis la simplification.',
-  create: creerOnglet({ genre: 'somme', comp: false, banques: ['A'], formule: { sansOp: ['somme'] } })
+  consigne: () => 'Une somme se dérive <b>terme par terme</b>. Choisis la dérivée de chaque terme, puis suis la simplification.',
+  create: creerOnglet({ genre: 'somme', comp: false, formule: { sansOp: ['somme'] } })
 });
 
 register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et quotients',
@@ -2615,7 +2501,7 @@ register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et q
   levels: [['', 'produits de binômes'], ['', 'quotients de binômes'], ['', 'polynômes plus longs, avec √x']],
   newLabel: () => null,
   consigne: () => 'Produit ou quotient ? <b>Choisis la formule</b>, nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, remplis la formule, puis suis la simplification.',
-  create: creerOnglet({ genre: 'prodquot', comp: false, banques: ['A'] })
+  create: creerOnglet({ genre: 'prodquot', comp: false })
 });
 
 register({ id: 'composee', title: 'Composées', short: 'Composées',
@@ -2623,7 +2509,7 @@ register({ id: 'composee', title: 'Composées', short: 'Composées',
   levels: [['', '(ax + b)ⁿ'], ['', '√u'], ['', '1/u, k/uⁿ, u du 2e degré']],
   newLabel: () => null,
   consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. <b>Choisis la formule</b>, nomme <i>u</i>, choisis sa dérivée <i>u</i>′, remplis la formule, puis suis la simplification.',
-  create: creerOnglet({ genre: 'composee', comp: true, banques: ['B'], formule: { ops: ['puissance', 'racine', 'inverse'] } })
+  create: creerOnglet({ genre: 'composee', comp: true, formule: { ops: ['puissance', 'racine', 'inverse'] } })
 });
 
 register({ id: 'defi', title: 'Défi', short: 'Défi',
@@ -2631,7 +2517,26 @@ register({ id: 'defi', title: 'Défi', short: 'Défi',
   levels: [['', 'formules emboîtées']],
   newLabel: () => null,
   consigne: () => 'Ici, plusieurs formules s’emboîtent. <b>Choisis d’abord la formule à appliquer en premier</b>, puis continue morceau par morceau.',
-  create: creerOnglet({ genre: 'defi', comp: true, banques: ['A', 'B'] })
+  create: creerOnglet({ genre: 'defi', comp: true })
+});
+
+// Icône de l'onglet : le livre de l'école, tranche aux cinq couleurs du logo, « f′ » sur la couverture
+const ICONE_COURS = '<svg viewBox="0 0 48 48" aria-hidden="true">'
+  + '<rect x="9" y="5" width="30" height="38" rx="3.5" fill="#fff" stroke="#1B2A4A" stroke-width="2"/>'
+  + '<rect x="9" y="5" width="7" height="38" rx="3" fill="#1B2A4A"/>'
+  + '<rect x="10.5" y="9" width="4" height="5" rx="1" fill="#007C74"/><rect x="10.5" y="15.5" width="4" height="5" rx="1" fill="#A00058"/>'
+  + '<rect x="10.5" y="22" width="4" height="5" rx="1" fill="#EC6708"/><rect x="10.5" y="28.5" width="4" height="5" rx="1" fill="#3B5C76"/>'
+  + '<rect x="10.5" y="35" width="4" height="5" rx="1" fill="#8A6D1D"/>'
+  + '<text x="27.5" y="27" text-anchor="middle" font-family="Source Serif 4, Georgia, serif" font-style="italic" font-weight="700" font-size="13" fill="#1B2A4A">f′</text>'
+  + '<path d="M21 32.5h13" stroke="#D9A21B" stroke-width="2" stroke-linecap="round"/></svg>';
+
+register({ id: 'cours', title: 'Exercices du cours', short: 'Exercices du cours',
+  accent: '#8A6D1D', bg: '#FBF6EA', icone: ICONE_COURS,
+  levels: [['', 'banque A (p. 11)'], ['', 'banques A et B (p. 11 et 17)'], ['', 'banques A et B (p. 12 et 17)']],
+  newLabel: () => null, nextLabel: () => '↻ Exercice suivant',
+  scoreVide: 'Les numéros réussis passent en vert.',
+  consigne: lv => `Les exercices de niveau ${lv} des banques du cours, dans l’ordre. <b>Choisis un numéro</b> au-dessus de la fonction (celui de ton cahier), puis suis le déroulé : formule, dérivées, remplir, simplifier.`,
+  create: creerOnglet({ cours: true })
 });
 
 boot('der56');
