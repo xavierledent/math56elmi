@@ -23,7 +23,7 @@
   if (!d || !connus[d.href]) return;
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var ou = esc(connus[d.href]) + ' · <b>' + esc(d.outil) + '</b>';
-  if (d.onglet) ou += ' · ' + esc(d.onglet) + (d.niv == null ? '' : d.niv === 0 ? ' (Explorer)' : ' (niveau ' + d.niv + ')');
+  if (d.onglet) ou += ' · ' + esc(d.onglet) + (d.niv == null ? '' : d.niv === 0 ? ' (Explorer)' : ' (' + (d.nomNiv ? esc(d.nomNiv.toLowerCase()) : 'niveau') + ' ' + d.niv + ')');
   var lien = d.href + (d.ex ? '#ex=' + encodeURIComponent(d.ex) + (d.niv != null ? '&niv=' + d.niv : '') : '');
   var box = document.getElementById('reprendre');
   box.innerHTML = '<span>Tu t’étais arrêté ici : ' + ou + '</span><a href="' + esc(lien) + '">Reprendre →</a>';

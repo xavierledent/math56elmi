@@ -478,6 +478,11 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .simpl-choix .piste { margin: 8px 0 0; padding: 6px 10px; border-radius: 8px; background: var(--ko-bg); color: var(--ink); font-size: 15px; }
 .simpl-choix .piste b { color: var(--ko); font-family: var(--ui); margin-right: 4px; }
 @media (max-width: 560px) { .opt-ligne { min-height: 40px; padding: 3px 8px; } .opt-ligne .m { font-size: 18px; } }
+/* correction animée : les trois lignes montrées sans clic, la bonne surlignée en vert */
+.choix-lignes.corr .opt-ligne { cursor: default; }
+.choix-lignes.corr .opt-ligne:hover { border-color: var(--line); background: #fff; }
+.opt-ligne.bon, .choix-lignes.corr .opt-ligne.bon:hover { border-color: var(--ok); background: var(--ok-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.opt-ligne.bon .lettre { background: var(--ok); }
 
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
@@ -783,7 +788,7 @@ function startLevel(lv) {
   $('levels').innerHTML = '';
   // niveau 0 (facultatif) : « Explorer », manipulation libre avec de petits défis, sans vérification
   const niveaux = (m.explorer ? [[0, '🔍', 'Explorer', m.explorer]] : [])
-    .concat(m.levels.map(([name, sub], i) => [i + 1, '●'.repeat(i + 1), 'Niveau ' + (i + 1), sub || name]));
+    .concat(m.levels.map(([name, sub], i) => [i + 1, '●'.repeat(i + 1), (m.nomNiveau || 'Niveau') + ' ' + (i + 1), sub || name]));
   niveaux.forEach(([n, dots, nom, sub]) => {
     const b = document.createElement('button');
     b.className = 'lvl' + (n === lv ? ' on' : '') + (n === 0 ? ' explorer' : '');
@@ -2023,7 +2028,7 @@ function creerFormule(ctx) {
           steps.push({
             say: T.kids.map((k, i) => `<span class="qui r-${roles[i]}">${roles[i]}</span> = ${E.math(k.node)}`).join(' ; ') + '.',
             run: async () => {
-              for (let i = 0; i < T.kids.length; i++) { st.lab[T.kids[i].id] = roles[i]; dessiner(); await wait(450); }
+              for (let i = 0; i < T.kids.length; i++) { st.lab[T.kids[i].id] = roles[i]; dessiner(); await wait(1000); }
               T.kids.forEach(k => { st.tagRole[k.id] = st.lab[k.id]; });
               finPhase(j);
             }
@@ -2427,6 +2432,8 @@ function creerRemplir(ctx) {
       nav.style.display = '';
       if (!n) { nav.innerHTML = `<span class="count">La dérivée brute est déjà la forme finale ✓</span>`; return; }
       if (st.palier) {
+        // pendant la correction animée, c'est « Étape suivante ▶ » qui ouvre la simplification
+        if (App.sol) { nav.style.display = 'none'; return; }
         nav.innerHTML = '<button class="btn go" id="nSimpl">Simplifier ▶</button>';
         $z('#nSimpl').onclick = () => { st.palier = false; clearFeedback(); dessiner(); if (ctx.majEtapes) ctx.majEtapes(); };
         return;
@@ -2448,13 +2455,14 @@ function creerRemplir(ctx) {
     // les trois lignes proposées pour la ligne suivante (une seule est juste)
     function dessinerChoix() {
       const box = $z('.simpl-choix'), n = q.lignes.length;
-      // pendant la correction animée, c'est le bandeau d'étapes qui avance
-      if (App.sol || st.ligne >= n) { box.hidden = true; box.innerHTML = ''; return; }
+      // pendant la correction animée : les trois lignes sont montrées (sans clic), puis la bonne est surlignée
+      const corr = !!App.sol;
+      if ((corr && !st.corrChoix) || st.ligne >= n) { box.hidden = true; box.innerHTML = ''; return; }
       box.hidden = false;
       const l = q.lignes[st.ligne];
       const act = ACTION_LIGNE[l.lab] || (st.ligne === n - 1 ? 'Simplifie jusqu’à la forme finale' : 'Simplifie');
-      box.innerHTML = `<p class="choix-titre"><b>${act}</b> : choisis la ligne suivante.</p><div class="choix-lignes">`
-        + q.options[st.ligne].map((o, k) => `<button class="opt-ligne${st.fauxL.has(k) ? ' faux' : ''}" data-k="${k}"${st.fauxL.has(k) ? ' aria-disabled="true"' : ''}>`
+      box.innerHTML = `<p class="choix-titre"><b>${act}</b> : ${corr ? 'quelle est la bonne ligne ?' : 'choisis la ligne suivante.'}</p><div class="choix-lignes${corr ? ' corr' : ''}">`
+        + q.options[st.ligne].map((o, k) => `<button class="opt-ligne${st.fauxL.has(k) ? ' faux' : ''}${corr && st.montreBon && !o.faute ? ' bon' : ''}" data-k="${k}"${st.fauxL.has(k) || corr ? ' aria-disabled="true"' : ''}>`
           + `<span class="lettre">${'ABC'[k]}</span><span class="m">= ${E.html(o.node)}</span></button>`).join('')
         + '</div>' + (st.pisteL ? `<p class="piste"><b>Pas encore…</b> ${st.pisteL}</p>` : '');
       box.querySelectorAll('.opt-ligne').forEach(b => {
@@ -2686,9 +2694,9 @@ function creerRemplir(ctx) {
           steps.push({
             say: (p.choix.length > 1 ? 'Les dérivées : ' : 'La dérivée : ') + p.choix.map(c => `<span class="m">${c.etiquette.length < 4 ? `<span class="qui r-${c.id[0]}">${c.etiquette}</span> = (${E.html(c.morceau)})′` : c.etiquette} = ${E.html(c.props.find(o => !o.faute).node)}</span>`).join(' ; ') + '.',
             run: async () => {
-              for (const c of p.choix) { st.choix[c.id] = c.props.findIndex(o => !o.faute); dessinerReponse(); await wait(350); }
+              for (const c of p.choix) { st.choix[c.id] = c.props.findIndex(o => !o.faute); dessinerReponse(); await wait(1000); }
               p.choix.forEach(c => { st.valeur[p.T.id + ':' + c.id] = c.props.find(o => !o.faute).node; });
-              await wait(300);
+              await wait(900);
               avancer(); dessiner();
             }
           });
@@ -2699,23 +2707,29 @@ function creerRemplir(ctx) {
               : 'On remplit la formule : chaque tuile va dans la case qui porte son nom.',
             run: async () => {
               const cs = casesDe(p.tmpl);
-              for (let i = 0; i < cs.length; i++) { st.cases[cle(p, cs[i], i)] = cs[i].id; dessiner(); await wait(300); }
+              for (let i = 0; i < cs.length; i++) { st.cases[cle(p, cs[i], i)] = cs[i].id; dessiner(); await wait(900); }
               avancer(); dessiner();
             }
           });
         }
       });
-      // la dérivée brute : un palier (somme : les dérivées choisies s'assemblent d'elles-mêmes)
-      const suite = q.lignes.length ? ' Elle est juste ; il reste à la simplifier, ligne par ligne.' : ' Ici, elle est déjà sous sa forme finale.';
-      steps.push({
-        say: (q.plan.auto ? 'On met les dérivées des termes bout à bout : c’est la <b>dérivée brute</b>.' : 'La formule remplie, c’est la <b>dérivée brute</b>.') + suite,
-        run: async () => { dessiner(); if (ctx.majEtapes) ctx.majEtapes(); }
-      });
-      // puis la simplification, ligne par ligne, jusqu'à la forme finale
+      // la dérivée brute apparaît à la fin de la dernière étape (pas d'étape à part : rien n'y bougerait)
+      const der = steps[steps.length - 1];
+      if (der) der.say += (q.plan.auto ? ' Mises bout à bout, elles forment la <b>dérivée brute</b>.' : ' La formule remplie, c’est la <b>dérivée brute</b>.')
+        + (q.lignes.length ? ' Il reste à la simplifier.' : ' Ici, elle est déjà sous sa forme finale.');
+      // puis la simplification : les trois lignes proposées, la bonne surlignée, puis elle s'écrit
       q.lignes.forEach((l, i) => steps.push({
         say: DIRE_LIGNE[l.lab] ? DIRE_LIGNE[l.lab] + (i === q.lignes.length - 1 ? ' Voilà la forme finale.' : '')
-          : i === q.lignes.length - 1 ? 'Voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
-        run: async () => { st.palier = false; st.fauxL.clear(); st.pisteL = ''; st.ligne = i + 1; dessiner(); if (ctx.majEtapes) ctx.majEtapes(); }
+          : i === q.lignes.length - 1 ? 'On simplifie : voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
+        run: async () => {
+          st.palier = false; st.fauxL.clear(); st.pisteL = ''; st.ligne = i; st.corrChoix = true; st.montreBon = false;
+          dessiner(); if (ctx.majEtapes) ctx.majEtapes();
+          await wait(1300);
+          st.montreBon = true; dessinerChoix();
+          await wait(1400);
+          st.corrChoix = st.montreBon = false; st.ligne = i + 1;
+          dessiner(); if (ctx.majEtapes) ctx.majEtapes();
+        }
       }));
       return { reset() { reset(); return {}; }, steps };
     }
@@ -2842,7 +2856,7 @@ function exercicesCours(ctx, niv, charger) {
 }
 
 register({ id: 'somme', title: 'Sommes et différences', short: 'Sommes',
-  accent: '#007C74', bg: '#EAF5F3',
+  accent: '#007C74', bg: '#EAF5F3', nomNiveau: 'Série',
   levels: [['', 'xⁿ, kx, constantes'], ['', 'avec 1/x et √x'], ['', 'termes déguisés (3/x², x/4…)']],
   newLabel: () => null,
   consigne: () => 'Une somme se dérive <b>terme par terme</b>. Choisis la dérivée de chaque terme, puis simplifie ligne par ligne.',
@@ -2850,7 +2864,7 @@ register({ id: 'somme', title: 'Sommes et différences', short: 'Sommes',
 });
 
 register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et quotients',
-  accent: '#A00058', bg: '#F9EDF3',
+  accent: '#A00058', bg: '#F9EDF3', nomNiveau: 'Série',
   levels: [['', 'produits de binômes'], ['', 'quotients de binômes'], ['', 'polynômes plus longs, avec √x']],
   newLabel: () => null,
   consigne: () => 'Nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, <b>remplis la formule</b>, puis simplifie ligne par ligne.',
@@ -2858,7 +2872,7 @@ register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et q
 });
 
 register({ id: 'composee', title: 'Composées', short: 'Composées',
-  accent: '#EC6708', bg: '#FDF1E7',
+  accent: '#EC6708', bg: '#FDF1E7', nomNiveau: 'Série',
   levels: [['', '(ax + b)ⁿ'], ['', '√u'], ['', '1/u, k/uⁿ, u du 2e degré']],
   newLabel: () => null,
   consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. Nomme <i>u</i>, choisis sa dérivée <i>u</i>′, <b>remplis la formule</b>, puis simplifie ligne par ligne.',
@@ -2866,7 +2880,7 @@ register({ id: 'composee', title: 'Composées', short: 'Composées',
 });
 
 register({ id: 'defi', title: 'Défi', short: 'Défi',
-  accent: '#3B5C76', bg: '#EEF1F4',
+  accent: '#3B5C76', bg: '#EEF1F4', nomNiveau: 'Série',
   levels: [['', 'formules emboîtées']],
   newLabel: () => null,
   consigne: () => 'Ici, plusieurs formules s’emboîtent : nomme les morceaux, du plus grand au plus petit, puis continue morceau par morceau.',
@@ -2937,7 +2951,7 @@ boot('der56');
     try {
       if (typeof App !== 'undefined' && App.m) {
         var n = App.level ? App.level[App.m.id] : null;
-        d.ex = App.m.id; d.onglet = App.m.short; if (n != null) d.niv = n;
+        d.ex = App.m.id; d.onglet = App.m.short; if (n != null) d.niv = n; if (App.m.nomNiveau) d.nomNiv = App.m.nomNiveau;
       }
     } catch (e) {}
     try { localStorage.setItem(cle, JSON.stringify(d)); } catch (e) {}

@@ -1340,7 +1340,7 @@ applyState();
     try {
       if (typeof App !== 'undefined' && App.m) {
         var n = App.level ? App.level[App.m.id] : null;
-        d.ex = App.m.id; d.onglet = App.m.short; if (n != null) d.niv = n;
+        d.ex = App.m.id; d.onglet = App.m.short; if (n != null) d.niv = n; if (App.m.nomNiveau) d.nomNiv = App.m.nomNiveau;
       }
     } catch (e) {}
     try { localStorage.setItem(cle, JSON.stringify(d)); } catch (e) {}
