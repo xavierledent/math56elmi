@@ -124,7 +124,7 @@ button, input { font: inherit; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 50% { box-shadow: 0 0 0 7px transparent; } }
 .btn[disabled] { opacity: .45; pointer-events: none; }
 
-.fb { margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 14.5px; line-height: 1.5; display: none; }
+.fb { margin-top: 12px; padding: 12px 14px; border-radius: 10px; font-size: 14.5px; line-height: 1.5; display: none; }
 .fb.show { display: block; animation: reveal .4s cubic-bezier(.2,.9,.3,1.15); }
 .fb.ok { background: var(--ok-bg); border-left: 4px solid var(--ok); }
 .fb.ko { background: var(--ko-bg); border-left: 4px solid var(--ko); }
@@ -141,10 +141,18 @@ button, input { font: inherit; }
 .fig-tip { font: 400 12.5px/1.4 var(--ui); color: var(--ink2); text-align: center; margin: 4px 0 2px; }
 .fig-tools { display: flex; gap: 8px; justify-content: center; margin: 2px 0 6px; flex-wrap: wrap; }
 .fig-tools:empty { display: none; }
-.figure-card:has(.stepbar) svg { max-height: calc(100vh - 300px); }
 .en-correction > :not(.stepbar) { display: none; }
-.stepbar { width: 100%; background: var(--bg); border: 1.5px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 12px; padding: 10px 14px; }
-.stepbar .say { font-size: 16px; line-height: 1.55; text-align: center; min-height: 2.4em; }
+/* correction pas à pas : un seul bloc (calcul écrit, phrase, navigation), sous la réponse */
+.stepbar { width: 100%; margin-top: 12px; background: var(--bg); border: 1.5px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left: 4px solid var(--accent); border-radius: 12px; padding: 10px 14px; }
+.stepbar[hidden] { display: none; }
+.figure-card > .stepbar { margin: 0 0 8px; }
+.corr-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.corr-tete b { font: 700 12px var(--ui); color: var(--accent); text-transform: uppercase; letter-spacing: .5px; }
+.calcs-zone { margin-top: 6px; padding: 4px 8px; background: #fff; border-radius: 8px; max-height: 32vh; overflow-y: auto; overscroll-behavior: contain; }
+.calcs-zone:empty { display: none; }
+/* pendant la correction : seuls « Autre question » et « Nouvelle figure » restent sous le bloc */
+body.corrige #bCheck, body.corrige #bHint, body.corrige #bSolve, body.corrige .score { display: none; }
+.stepbar .say { margin-top: 8px; font-size: 16px; line-height: 1.55; text-align: left; min-height: 2.4em; }
 /* nouvelle phrase : elle s'éclaire doucement, sans repartir du blanc */
 .stepbar .say.change { animation: phrase .3s ease; }
 @keyframes phrase { from { opacity: .45; } to { opacity: 1; } }
@@ -152,10 +160,10 @@ button, input { font: inherit; }
 .stepbar .nav { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .stepbar .count { font: 600 12px var(--ui); color: var(--ink2); min-width: 72px; text-align: center; }
 .stepbar .btn.go { background: var(--accent); border-color: var(--accent); color: #fff; }
-.fb .calcs { font-size: 16px; margin: 3px 0 0; line-height: 1.9; }
-.fb .calc { display: inline-block; padding: 0 6px; border-radius: 6px; line-height: 1.6; }
-.fb .calc.item + .calc.item { margin-left: .8em; }
-.fb .calc.new { background: color-mix(in srgb, var(--accent) 13%, #fff); animation: reveal .35s ease; }
+.stepbar .calcs { font-size: 16px; margin: 3px 0 0; line-height: 1.9; }
+.stepbar .calc { display: inline-block; padding: 0 6px; border-radius: 6px; line-height: 1.6; }
+.stepbar .calc.item + .calc.item { margin-left: .8em; }
+.stepbar .calc.new { background: color-mix(in srgb, var(--accent) 13%, #fff); animation: reveal .35s ease; }
 .fig-tools .btn { font-size: 12.5px; padding: 7px 12px; }
 
 /* ---------- math notation ---------- */
@@ -253,9 +261,9 @@ button, input { font: inherit; }
   .figure-card { position: relative; top: 0; min-height: 0; display: flex; flex-direction: column; }
   .fig-tools, .fig-tip { flex: none; }
   #fig { flex: 1 1 0; min-height: 0; }
-  .figure-card svg, .figure-card:has(.stepbar) svg { width: 100%; height: 100%; max-height: none; }
-  /* zone dédiée aux retours, sous la figure : la figure se réduit, le cadre défile seul s'il est long */
-  .figure-card > .fb { flex: none; max-height: 42%; overflow-y: auto; overscroll-behavior: contain; margin: 8px 4px 0; }
+  .figure-card svg { width: 100%; height: 100%; max-height: none; }
+  /* les retours et la correction sont dans le panneau de gauche : la figure garde toute la hauteur */
+  .figure-card > .stepbar { flex: none; max-height: 45%; overflow-y: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -478,11 +486,12 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .simpl-choix .piste { margin: 8px 0 0; padding: 6px 10px; border-radius: 8px; background: var(--ko-bg); color: var(--ink); font-size: 15px; }
 .simpl-choix .piste b { color: var(--ko); font-family: var(--ui); margin-right: 4px; }
 @media (max-width: 560px) { .opt-ligne { min-height: 40px; padding: 3px 8px; } .opt-ligne .m { font-size: 18px; } }
-/* correction animée : les trois lignes montrées sans clic, la bonne surlignée en vert */
-.choix-lignes.corr .opt-ligne { cursor: default; }
-.choix-lignes.corr .opt-ligne:hover { border-color: var(--line); background: #fff; }
-.opt-ligne.bon, .choix-lignes.corr .opt-ligne.bon:hover { border-color: var(--ok); background: var(--ok-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
-.opt-ligne.bon .lettre { background: var(--ok); }
+/* correction animée : étiquette qui glisse vers sa case ; calcul de la simplification terme par terme */
+.fantome.vol { left: 0; top: 0; transform: none; }
+.simpl-corps .bx { border-radius: .2em; transition: background-color .35s ease, box-shadow .35s ease, opacity .5s ease; }
+.simpl-corps .bx.cache { opacity: 0; }
+.simpl-corps .bx.calc-src { background: color-mix(in srgb, var(--cc) 16%, transparent); box-shadow: 0 0 0 .07em var(--cc); }
+.simpl-corps .bx.calc-dst { background: color-mix(in srgb, var(--cc) 16%, transparent); }
 
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
@@ -544,6 +553,8 @@ a.sous-titre-site:hover{text-decoration:underline}
     <div class="levels" id="levels"></div>
     <p class="consigne" id="consigne"></p>
     <div class="question" id="question"></div>
+    <!-- correction pas à pas : sous la réponse (sur écran étroit, elle passe au-dessus de la figure) -->
+    <div class="stepbar" id="corr" hidden></div>
     <div class="actions">
       <button class="btn primary" id="bCheck">✓ Vérifier</button>
       <button class="btn" id="bHint">💡 Indice</button>
@@ -551,12 +562,12 @@ a.sous-titre-site:hover{text-decoration:underline}
       <button class="btn" id="bNext">↻ Autre question</button>
       <button class="btn" id="bNew">⟳ Nouvelle figure</button>
     </div>
+    <div class="fb" id="fb" aria-live="polite"></div>
     <div class="score" id="score"></div>
   </section>
   <section class="node figure-card">
     <div class="fig-tools" id="figTools"></div>
     <div id="fig"></div>
-    <div class="fb" id="fb" aria-live="polite"></div>
     <p class="fig-tip" id="figTip"></p>
   </section>
 </main>
@@ -753,12 +764,74 @@ function feedback(type, title, html) {
   const fb = $('fb'), cls = 'fb show ' + type;
   if (fb.className !== cls) { fb.className = 'fb'; void fb.offsetWidth; fb.className = cls; }   // pas de clignotement pendant une correction
   fb.innerHTML = (title ? `<b class="t">${title}</b>` : '') + (html || '');
-  // sur grand écran, le cadre de retour défile seul : pendant la correction, on montre la dernière ligne
-  fb.scrollTop = type === 'sol' ? fb.scrollHeight : 0;
-  const bas = Math.min(innerHeight, fb.closest('.figure-card').getBoundingClientRect().bottom);
+  // le retour est sous la réponse, dans le panneau (qui défile seul sur grand écran) : on le rend visible
+  const bas = Math.min(innerHeight, fb.closest('.panel').getBoundingClientRect().bottom);
   if (fb.getBoundingClientRect().bottom > bas) fb.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
 }
 function clearFeedback() { $('fb').className = 'fb'; $('fb').innerHTML = ''; }
+
+/* ---------- correction pas à pas : un seul bloc « le cahier » ----------
+   La phrase de l'étape, le calcul écrit ligne par ligne et la navigation sont ensemble, sous la réponse
+   de l'élève (panneau de gauche) ; la figure, à droite, garde toute la hauteur. Sur écran étroit (une
+   colonne), le bloc passe juste au-dessus de la figure, pour qu'on voie les deux à la fois. */
+const LARGE = '(min-width: 961px)';
+function placerCorrection() {
+  const c = $('corr');
+  if (matchMedia(LARGE).matches) { if (c.previousElementSibling !== $('question')) $('question').after(c); }
+  else if (c.nextElementSibling !== $('figTools')) $('figTools').before(c);
+}
+addEventListener('resize', () => { if (!$('corr').hidden) placerCorrection(); });
+function finCorrection() {
+  const c = $('corr');
+  c.hidden = true; c.innerHTML = '';
+  document.body.classList.remove('corrige');
+  $('figTools').classList.remove('en-correction');
+}
+// construit le bloc une fois, puis le met à jour sur place (rien ne clignote d'une étape à l'autre)
+function blocCorrection(i, n) {
+  const bar = $('corr');
+  if (!bar.firstChild) {
+    bar.innerHTML = '<div class="corr-tete"><b>▶ Correction</b><span class="count"></span></div>'
+      + '<div class="calcs-zone"></div><div class="say" aria-live="polite"></div>'
+      + '<div class="nav"><button class="btn" id="sPrev">◀ Précédent</button><button class="btn" id="sAgain">↻ Rejouer</button>'
+      + '<button class="btn go" id="sNext"></button></div>';
+    $('sPrev').onclick = () => showStep(App.sol.i - 1);
+    $('sAgain').onclick = () => showStep(App.sol.i);
+    $('sNext').onclick = () => showStep(App.sol.i + 1);
+  }
+  bar.hidden = false;
+  placerCorrection();
+  clearFeedback();
+  document.body.classList.add('corrige');
+  $('figTools').classList.add('en-correction');     // les outils de la figure sont masqués pendant la correction
+  const sol = App.sol, say = bar.querySelector('.say');
+  if (say.innerHTML !== sol.steps[i].say) {
+    say.innerHTML = sol.steps[i].say;
+    say.classList.remove('change'); void say.offsetWidth; say.classList.add('change');
+  }
+  bar.querySelector('.count').textContent = `Étape ${i + 1} / ${n}`;
+  $('sPrev').disabled = !i;
+  $('sNext').disabled = i >= n - 1;
+  $('sNext').textContent = i < n - 1 ? 'Étape suivante ▶' : 'Terminé ✓';
+  // Calcul écrit, juste au-dessus de la phrase : une égalité qui commence par « = » continue la ligne
+  // précédente, et les lignes sans « = » (composantes d'un vecteur, nombre de graduations…) se suivent
+  // sur une même ligne ; la nouvelle ligne est surlignée.
+  const lines = sol.steps.slice(0, i + 1).map(st => st.write).filter(Boolean);
+  const rows = [], sansEgal = l => !/=/.test(l.replace(/<[^>]+>/g, ''));
+  let prev = null;
+  lines.forEach((l, j) => {
+    const item = sansEgal(l);
+    const html = `<span class="calc${item ? ' item' : ''}${j === lines.length - 1 ? ' new' : ''}">${l}</span>`;
+    if (rows.length && (/^\s*=/.test(l) || (item && prev === 'item'))) rows[rows.length - 1].push(html); else rows.push([html]);
+    prev = item ? 'item' : 'eq';
+  });
+  const zone = bar.querySelector('.calcs-zone');
+  zone.innerHTML = rows.map(r => `<p class="calcs">${r.join(' ')}</p>`).join('');
+  zone.scrollTop = zone.scrollHeight;
+  // le bloc entier visible dans le panneau
+  const bas = Math.min(innerHeight, (bar.closest('.panel') || bar.parentElement).getBoundingClientRect().bottom);
+  if (bar.getBoundingClientRect().bottom > bas) bar.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+}
 
 function renderTabs() {
   $('tabs').innerHTML = '';
@@ -812,8 +885,7 @@ function startLevel(lv) {
 function newQuestion(sameFigure) {
   cancelAnim(); clearFeedback();
   // fin de la correction : son bandeau disparaît, les outils de la figure reviennent
-  $('figTools').querySelector('.stepbar')?.remove();
-  $('figTools').classList.remove('en-correction');
+  finCorrection();
   App.sol = null;
   App.solved = App.revealed = false;
   App.inst.next(sameFigure);
@@ -855,43 +927,7 @@ function showStep(i) {
   const sol = App.sol, n = sol.steps.length;
   i = Math.max(0, Math.min(n - 1, i));
   sol.i = i;
-  // bandeau de la correction : son propre bloc (les autres outils sont masqués pendant la correction)
-  // le bandeau est construit une fois, puis mis à jour sur place (rien ne clignote d'une étape à l'autre)
-  let bar = $('figTools').querySelector('.stepbar');
-  if (!bar) {
-    bar = document.createElement('div'); bar.className = 'stepbar';
-    bar.innerHTML = '<div class="say"></div><div class="nav"><button class="btn" id="sPrev">◀ Précédent</button>'
-      + '<span class="count"></span><button class="btn" id="sAgain">↻ Rejouer</button><button class="btn go" id="sNext"></button></div>';
-    $('figTools').prepend(bar);
-    $('sPrev').onclick = () => showStep(App.sol.i - 1);
-    $('sAgain').onclick = () => showStep(App.sol.i);
-    $('sNext').onclick = () => showStep(App.sol.i + 1);
-  }
-  $('figTools').classList.add('en-correction');
-  const say = bar.querySelector('.say');
-  if (say.innerHTML !== sol.steps[i].say) {
-    say.innerHTML = sol.steps[i].say;
-    say.classList.remove('change'); void say.offsetWidth; say.classList.add('change');
-  }
-  bar.querySelector('.count').textContent = `Étape ${i + 1} / ${n}`;
-  $('sPrev').disabled = !i;
-  $('sNext').disabled = i >= n - 1;
-  $('sNext').textContent = i < n - 1 ? 'Étape suivante ▶' : 'Terminé ✓';
-  const lines = sol.steps.slice(0, i + 1).map(st => st.write).filter(Boolean);
-  // Calcul compact, pour laisser la place à la figure (retour à la ligne seulement si la place manque) :
-  // une égalité qui commence par « = » continue la ligne précédente, et les lignes sans « = »
-  // (composantes d'un vecteur, nombre de graduations…) se suivent sur une même ligne.
-  const rows = [], sansEgal = l => !/=/.test(l.replace(/<[^>]+>/g, ''));
-  let prev = null;
-  lines.forEach((l, j) => {
-    const item = sansEgal(l);
-    const html = `<span class="calc${item ? ' item' : ''}${j === lines.length - 1 ? ' new' : ''}">${l}</span>`;
-    if (rows.length && (/^\s*=/.test(l) || (item && prev === 'item'))) rows[rows.length - 1].push(html); else rows.push([html]);
-    prev = item ? 'item' : 'eq';
-  });
-  // pas de ligne écrite (la figure porte tout le calcul) : pas de cadre de correction
-  if (rows.length) feedback('sol', '▶ Correction', rows.map(r => `<p class="step calcs">${r.join(' ')}</p>`).join(''));
-  else clearFeedback();
+  blocCorrection(i, n);
   // Étape suivante, la précédente jouée jusqu'au bout : on joue seulement la nouvelle étape, comme l'élève
   // qui avance (rien n'est remis à zéro, donc rien ne clignote). Sinon (Précédent, Rejouer, saut) :
   // retour au départ, les étapes déjà vues rejouées instantanément, puis l'étape courante animée.
@@ -1867,7 +1903,7 @@ function creerFormule(ctx) {
     /* ---------- question ---------- */
     function charger(src, comp) {
       cancelAnim(); clearFeedback(); App.solved = App.revealed = false; App.sol = null;
-      ctx.tools.querySelector('.stepbar')?.remove(); ctx.tools.classList.remove('en-correction');
+      finCorrection();
       const a = E.parse(src);
       q = { src, comp, T: arbre(a, comp) };
       // identifiants des nœuds de l'arbre
@@ -2145,6 +2181,47 @@ function ligneDifferente(x, L) {
   }
   return n >= 3 && diff;
 }
+// termes « atomes » d'une ligne (les nœuds eux-mêmes, dans l'ordre d'écriture)
+function atomesDe(a) { const out = []; mapAtomes(a, t => { out.push(t); }); return out; }
+// Pour animer le calcul d'une ligne : d'où vient chaque terme de L dans la ligne précédente ?
+// → [{ src: [rangs des termes de prev], fac: [data-id des termes des facteurs distribués], dst: [rang dans L] }]
+// distribuer : produit d'un terme du 1er facteur par un terme du 2e ; réduire : les termes de même degré ;
+// sinon le terme de prev de même valeur (ou de valeur opposée : parenthèse enlevée).
+function groupesCalcul(prev, L) {
+  const PTS = [0.37, 1.43, 2.29];
+  const val = a => PTS.map(x => E.ev(a, x));
+  const egal = (u, v, s) => u.every((x, k) => Number.isFinite(x) && Number.isFinite(v[k]) && Math.abs(x - s * v[k]) < 1e-7 * (1 + Math.abs(x)));
+  const pareil = (u, v) => egal(u, v, 1) || egal(u, v, -1);
+  const deg = a => { const M = E.toL(a); return M && M.size === 1 ? [...M.keys()][0] : null; };
+  const A = atomesDe(prev), B = atomesDe(L), vA = A.map(val), pris = new Set();
+  const fac = (L.paires || []).flatMap((pr, a) => pr[0].flatMap((u, i) => pr[1].map((w, j) => {
+    const vu = val(u), vw = val(w);
+    return { ids: [`${a}-0-${i}`, `${a}-1-${j}`], v: vu.map((x, k) => x * vw[k]) };
+  })));
+  return B.map((b, j) => {
+    const vb = val(b);
+    const f = fac.find(f => !f.pris && pareil(vb, f.v));
+    if (f) { f.pris = true; return { src: [], fac: f.ids, dst: [j] }; }
+    const d = deg(b), memeDeg = d === null ? [] : A.map((_, k) => k).filter(k => !pris.has(k) && deg(A[k]) === d);
+    if (memeDeg.length > 1 && L.lab === 'réduire') { memeDeg.forEach(k => pris.add(k)); return { src: memeDeg, fac: [], dst: [j] }; }
+    const k = A.findIndex((_, k) => !pris.has(k) && pareil(vb, vA[k]));
+    if (k >= 0) { pris.add(k); return { src: [k], fac: [], dst: [j] }; }
+    memeDeg.forEach(k => pris.add(k));
+    return { src: memeDeg, fac: [], dst: [j] };
+  });
+}
+// correction animée : une copie (html) glisse de l'élément src jusqu'à la case cible, en petit arc
+async function voler(src, cible, html, ms = 1000) {
+  if (!src || !cible || !animScale) return;
+  const a = src.getBoundingClientRect(), b = cible.getBoundingClientRect();
+  const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = b.left + b.width / 2, y1 = b.top + b.height / 2;
+  const el = document.createElement('div');
+  el.className = 'fantome vol'; el.innerHTML = html;
+  document.body.appendChild(el);
+  try {
+    await tween(ms, t => { el.style.transform = `translate(${x0 + (x1 - x0) * t}px, ${y0 + (y1 - y0) * t - Math.sin(Math.PI * t) * 40}px) translate(-50%, -50%)`; });
+  } finally { el.remove(); }
+}
 // deux lignes fausses pour la ligne L (qui suit prev), chacune avec une erreur typique de l'action
 function lignesFausses(prev, L) {
   const c = [], n = nbAtomes(L), idx = shuffle([...Array(n).keys()]);
@@ -2319,7 +2396,7 @@ function creerRemplir(ctx) {
     /* ---------- question ---------- */
     function charger(src, comp, silencieux) {
       if (!silencieux) { cancelAnim(); clearFeedback(); App.solved = App.revealed = false; App.sol = null; }
-      ctx.tools.querySelector('.stepbar')?.remove(); ctx.tools.classList.remove('en-correction');
+      finCorrection();
       const a = E.parse(src);
       q = { src, comp, a, T: arbre(a, comp), num: ++numQuestion };
       { let n = 0; (function num(T) { T.id = "n" + (n++); T.kids.forEach(num); })(q.T); }
@@ -2346,7 +2423,7 @@ function creerRemplir(ctx) {
 
     }
     function reset() {
-      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false, palier: false, fauxL: new Set(), pisteL: '' };
+      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false, palier: false, fauxL: new Set(), pisteL: '', animLigne: -1 };
       sauterAuto();
       dessiner();
     }
@@ -2455,14 +2532,13 @@ function creerRemplir(ctx) {
     // les trois lignes proposées pour la ligne suivante (une seule est juste)
     function dessinerChoix() {
       const box = $z('.simpl-choix'), n = q.lignes.length;
-      // pendant la correction animée : les trois lignes sont montrées (sans clic), puis la bonne est surlignée
-      const corr = !!App.sol;
-      if ((corr && !st.corrChoix) || st.ligne >= n) { box.hidden = true; box.innerHTML = ''; return; }
+      // pendant la correction animée, pas de choix : le calcul s'anime dans la fenêtre
+      if (App.sol || st.ligne >= n) { box.hidden = true; box.innerHTML = ''; return; }
       box.hidden = false;
       const l = q.lignes[st.ligne];
       const act = ACTION_LIGNE[l.lab] || (st.ligne === n - 1 ? 'Simplifie jusqu’à la forme finale' : 'Simplifie');
-      box.innerHTML = `<p class="choix-titre"><b>${act}</b> : ${corr ? 'quelle est la bonne ligne ?' : 'choisis la ligne suivante.'}</p><div class="choix-lignes${corr ? ' corr' : ''}">`
-        + q.options[st.ligne].map((o, k) => `<button class="opt-ligne${st.fauxL.has(k) ? ' faux' : ''}${corr && st.montreBon && !o.faute ? ' bon' : ''}" data-k="${k}"${st.fauxL.has(k) || corr ? ' aria-disabled="true"' : ''}>`
+      box.innerHTML = `<p class="choix-titre"><b>${act}</b> : choisis la ligne suivante.</p><div class="choix-lignes">`
+        + q.options[st.ligne].map((o, k) => `<button class="opt-ligne${st.fauxL.has(k) ? ' faux' : ''}" data-k="${k}"${st.fauxL.has(k) ? ' aria-disabled="true"' : ''}>`
           + `<span class="lettre">${'ABC'[k]}</span><span class="m">= ${E.html(o.node)}</span></button>`).join('')
         + '</div>' + (st.pisteL ? `<p class="piste"><b>Pas encore…</b> ${st.pisteL}</p>` : '');
       box.querySelectorAll('.opt-ligne').forEach(b => {
@@ -2496,13 +2572,18 @@ function creerRemplir(ctx) {
     function lignesSimpl() {
       const n = q.lignes.length, corps = $z('.simpl-corps');
       // lignes : on retire celles en trop, on ajoute celles qui manquent
-      const dom = [...corps.querySelectorAll('.ls:not(.depart)')];
-      for (let k = dom.length - 1; k >= st.ligne; k--) dom[k].remove();
+      // (la ligne que la correction va animer est toujours réécrite : elle arrive avec ses termes cachés)
+      let dom = [...corps.querySelectorAll('.ls:not(.depart)')];
+      const garde = st.animLigne >= 0 ? Math.min(st.ligne, st.animLigne) : st.ligne;
+      for (let k = dom.length - 1; k >= garde; k--) dom[k].remove();
+      dom = dom.slice(0, garde);
       let ajout = null;
       for (let k = dom.length; k < st.ligne; k++) {
         const l = q.lignes[k], p = document.createElement('p');
         p.className = 'ls';
-        p.innerHTML = (l.lab ? `<span class="eti">${l.lab}</span>` : '') + `<span class="m">= ${E.html(l)}</span>`
+        // chaque terme dans sa boîte (data-id a0, a1…) : la correction les fait apparaître un à un
+        const marks = new Map(atomesDe(l).map((t, j) => [t, { id: 'a' + j, cls: k === st.animLigne ? 'cache' : '' }]));
+        p.innerHTML = (l.lab ? `<span class="eti">${l.lab}</span>` : '') + `<span class="m">= </span>${E.mathMarks(l, marks)}`
           + (k === n - 1 ? ' <span class="fin">forme finale ✓</span>' : '');
         corps.insertBefore(p, corps.querySelector('svg.arcs'));
         ajuste(p, 26, 12);
@@ -2533,10 +2614,36 @@ function creerRemplir(ctx) {
       // termes des facteurs distribués, repérés dans la ligne de départ (pour les arcs)
       const marks = new Map();
       q.lignes.filter(l => l.paires).forEach(l => l.paires.forEach((pr, k) => pr.forEach((ts, j) => ts.forEach((t, i) => marks.set(t, { id: k + '-' + j + '-' + i, cls: 'tm' })))));
+      // et ses termes (a0, a1…), pour l'animation du calcul de la ligne suivante
+      atomesDe(q.depart).forEach((t, j) => { if (!marks.has(t)) marks.set(t, { id: 'a' + j, cls: '' }); });
       corps.innerHTML = `<p class="ls depart"><span class="eti">dérivée brute</span><i>f</i>′(<i>x</i>) = ${E.mathMarks(q.depart, marks)}</p>`;
       ajuste(corps.querySelector('.ls'), 26, 12);
       corps.scrollTop = 0;
       $z('.simpl-nav').innerHTML = '<span class="count"></span>';
+    }
+    // Correction animée d'une ligne de la simplification : pour chaque terme de la nouvelle ligne, les termes
+    // d'où il vient s'allument sur la ligne précédente (même couleur), puis il apparaît.
+    async function animerLigne(i) {
+      const corps = $z('.simpl-corps'), tout = [...corps.querySelectorAll('.ls')];   // départ, puis les lignes
+      const pPrev = tout[i], pNew = tout[i + 1], depart = corps.querySelector('.ls.depart');
+      if (!pPrev || !pNew) return;
+      const allumes = [];
+      try {
+        for (const [g, gr] of groupesCalcul(i ? q.lignes[i - 1] : q.depart, q.lignes[i]).entries()) {
+          const coul = COUL_ARC[g % COUL_ARC.length];
+          const src = gr.src.map(k => pPrev.querySelector(`[data-id="a${k}"]`)).concat(gr.fac.map(id => depart.querySelector(`[data-id="${id}"]`))).filter(Boolean);
+          const dst = gr.dst.map(k => pNew.querySelector(`[data-id="a${k}"]`)).filter(Boolean);
+          src.forEach(e => { e.style.setProperty('--cc', coul); e.classList.add('calc-src'); allumes.push(e); });
+          if (src.length) await wait(700);
+          dst.forEach(e => { e.style.setProperty('--cc', coul); e.classList.remove('cache'); e.classList.add('calc-dst'); allumes.push(e); });
+          await wait(800);
+          src.forEach(e => e.classList.remove('calc-src'));
+        }
+        await wait(500);
+      } finally {
+        pNew.querySelectorAll('.cache').forEach(e => e.classList.remove('cache'));
+        allumes.forEach(e => e.classList.remove('calc-src', 'calc-dst'));
+      }
     }
     // arcs de la distributivité : chaque terme du 1er facteur relié à chaque terme du 2e (une couleur par terme)
     const COUL_ARC = ['#007C74', '#A00058', '#EC6708', '#3B5C76', '#8A6D1D'];
@@ -2694,20 +2801,37 @@ function creerRemplir(ctx) {
           steps.push({
             say: (p.choix.length > 1 ? 'Les dérivées : ' : 'La dérivée : ') + p.choix.map(c => `<span class="m">${c.etiquette.length < 4 ? `<span class="qui r-${c.id[0]}">${c.etiquette}</span> = (${E.html(c.morceau)})′` : c.etiquette} = ${E.html(c.props.find(o => !o.faute).node)}</span>`).join(' ; ') + '.',
             run: async () => {
-              for (const c of p.choix) { st.choix[c.id] = c.props.findIndex(o => !o.faute); dessinerReponse(); await wait(1000); }
-              p.choix.forEach(c => { st.valeur[p.T.id + ':' + c.id] = c.props.find(o => !o.faute).node; });
-              await wait(900);
+              // chaque bonne dérivée est choisie, puis glisse dans sa case de la formule
+              for (const [k, c] of p.choix.entries()) {
+                st.choix[c.id] = c.props.findIndex(o => !o.faute); dessinerReponse();
+                await wait(800);
+                const node = c.props[st.choix[c.id]].node, src = ctx.q.querySelector(`.opt.on[data-c="${k}"]`);
+                const cibles = [...$z('.modele').querySelectorAll('.trou')].filter(el => el.dataset.h.split(':')[0] === c.id);
+                await Promise.all(cibles.map(el => voler(src, el, `<span class="m">${E.html(node)}</span>`)));
+                st.valeur[p.T.id + ':' + c.id] = node;
+                if (!p.auto) casesDe(p.tmpl).forEach((h, i) => { if (h.id === c.id) st.cases[cle(p, h, i)] = h.id; });
+                dessiner();
+                await wait(400);
+              }
               avancer(); dessiner();
             }
           });
         } else {
           const sd = p === q.plan ? null : sousDe(p), nom = sd && (sd.s.id[0] === 't' ? 'ce terme' : `<span class="qui r-${sd.s.id[0]}">${sd.s.id[0]}</span>`);
           steps.push({
-            say: sd ? `On remplit la formule pour ${nom} : chaque tuile va dans la case qui porte son nom. Sa dérivée servira ensuite dans la grande formule.`
-              : 'On remplit la formule : chaque tuile va dans la case qui porte son nom.',
+            say: sd ? `On remplit le reste de la formule pour ${nom} : chaque tuile va dans la case qui porte son nom. Sa dérivée servira ensuite dans la grande formule.`
+              : 'On remplit le reste de la formule : chaque tuile va dans la case qui porte son nom.',
             run: async () => {
+              // les tuiles des morceaux glissent une à une dans les cases encore vides (les dérivées y sont déjà)
               const cs = casesDe(p.tmpl);
-              for (let i = 0; i < cs.length; i++) { st.cases[cle(p, cs[i], i)] = cs[i].id; dessiner(); await wait(900); }
+              for (let i = 0; i < cs.length; i++) {
+                if (st.cases[cle(p, cs[i], i)]) continue;
+                const id = cs[i].id;
+                await voler(ctx.q.querySelector(`.tuile[data-t="${id}"]`), $z('.modele').querySelector(`.trou[data-h="${id}:${i}"]`),
+                  `<span class="tuile r-${COUL_TUILE[id]}"><span class="nom">${NOM_TUILE[id]}</span><span class="m">${E.html(valeurTuile(p, id))}</span></span>`);
+                st.cases[cle(p, cs[i], i)] = id; dessiner();
+                await wait(300);
+              }
               avancer(); dessiner();
             }
           });
@@ -2717,18 +2841,18 @@ function creerRemplir(ctx) {
       const der = steps[steps.length - 1];
       if (der) der.say += (q.plan.auto ? ' Mises bout à bout, elles forment la <b>dérivée brute</b>.' : ' La formule remplie, c’est la <b>dérivée brute</b>.')
         + (q.lignes.length ? ' Il reste à la simplifier.' : ' Ici, elle est déjà sous sa forme finale.');
-      // puis la simplification : les trois lignes proposées, la bonne surlignée, puis elle s'écrit
+      // puis la simplification : chaque ligne s'écrit en animant le calcul, terme par terme
       q.lignes.forEach((l, i) => steps.push({
         say: DIRE_LIGNE[l.lab] ? DIRE_LIGNE[l.lab] + (i === q.lignes.length - 1 ? ' Voilà la forme finale.' : '')
           : i === q.lignes.length - 1 ? 'On simplifie : voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
         run: async () => {
-          st.palier = false; st.fauxL.clear(); st.pisteL = ''; st.ligne = i; st.corrChoix = true; st.montreBon = false;
+          st.palier = false; st.fauxL.clear(); st.pisteL = '';
+          st.animLigne = animScale ? i : -1;          // la nouvelle ligne arrive avec ses termes cachés
+          st.ligne = i + 1;
           dessiner(); if (ctx.majEtapes) ctx.majEtapes();
-          await wait(1300);
-          st.montreBon = true; dessinerChoix();
-          await wait(1400);
-          st.corrChoix = st.montreBon = false; st.ligne = i + 1;
-          dessiner(); if (ctx.majEtapes) ctx.majEtapes();
+          if (!animScale) return;
+          await wait(80);                             // la fenêtre écrit ses lignes à l'image suivante
+          try { await animerLigne(i); } finally { st.animLigne = -1; }
         }
       }));
       return { reset() { reset(); return {}; }, steps };
