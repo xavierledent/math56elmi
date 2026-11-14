@@ -264,6 +264,27 @@ body.corrige #bCheck, body.corrige #bHint, body.corrige #bSolve, body.corrige .s
   .figure-card svg { width: 100%; height: 100%; max-height: none; }
   /* les retours et la correction sont dans le panneau de gauche : la figure garde toute la hauteur */
   .figure-card > .stepbar { flex: none; max-height: 45%; overflow-y: auto; }
+  /* pendant la correction : le panneau s'élargit (l'élève ne travaille plus sur la figure), son haut
+     (niveaux, consigne) se replie, et le bloc de correction prend toute la place qui reste : c'est lui qu'on lit */
+  body.corrige .workspace { grid-template-columns: minmax(440px, 42%) minmax(0, 1fr); }
+  body.corrige .panel .levels, body.corrige .panel .consigne { display: none; }
+  body.corrige .panel { display: flex; flex-direction: column; }
+  body.corrige .panel > .stepbar { flex: 1 1 auto; min-height: 9em; display: flex; flex-direction: column; padding: 14px 18px; }
+  body.corrige .stepbar .calcs-zone { flex: 0 1 auto; min-height: 0; max-height: none; padding: 6px 10px; }
+  body.corrige .stepbar .calcs { font-size: 19px; }
+  body.corrige .stepbar .say { font-size: 19px; line-height: 1.5; }
+  body.corrige .stepbar .corr-tete b { font-size: 13px; }
+  body.corrige .stepbar .count { font-size: 13px; }
+  body.corrige .stepbar .nav { margin: 10px 0 4px; }
+  body.corrige .stepbar .nav .btn { font-size: 14px; padding: 10px 14px; }
+}
+/* grand écran : les onglets restent sur une ligne (c'est le titre qui se raccourcit s'il manque de place) */
+@media (min-width: 1200px) {
+  .tabs { flex-wrap: nowrap; flex-shrink: 0; }
+  .brand { flex: 1 1 auto; }
+  .brand > div { min-width: 0; }
+  .brand h1, .brand p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tab { padding: 6px 11px 6px 9px; gap: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -791,10 +812,11 @@ function finCorrection() {
 function blocCorrection(i, n) {
   const bar = $('corr');
   if (!bar.firstChild) {
+    // navigation en haut du bloc : sa place ne bouge pas pendant que le calcul s'écrit dessous
     bar.innerHTML = '<div class="corr-tete"><b>▶ Correction</b><span class="count"></span></div>'
-      + '<div class="calcs-zone"></div><div class="say" aria-live="polite"></div>'
       + '<div class="nav"><button class="btn" id="sPrev">◀ Précédent</button><button class="btn" id="sAgain">↻ Rejouer</button>'
-      + '<button class="btn go" id="sNext"></button></div>';
+      + '<button class="btn go" id="sNext"></button></div>'
+      + '<div class="calcs-zone"></div><div class="say" aria-live="polite"></div>';
     $('sPrev').onclick = () => showStep(App.sol.i - 1);
     $('sAgain').onclick = () => showStep(App.sol.i);
     $('sNext').onclick = () => showStep(App.sol.i + 1);
