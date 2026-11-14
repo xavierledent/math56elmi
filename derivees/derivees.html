@@ -267,10 +267,19 @@ body.corrige #bCheck, body.corrige #bHint, body.corrige #bSolve, body.corrige .s
   /* pendant la correction : le panneau s'élargit (l'élève ne travaille plus sur la figure), son haut
      (niveaux, consigne) se replie, et le bloc de correction prend toute la place qui reste : c'est lui qu'on lit */
   body.corrige .workspace { grid-template-columns: minmax(440px, 42%) minmax(0, 1fr); }
-  body.corrige .panel .levels, body.corrige .panel .consigne { display: none; }
+  body.corrige .panel .consigne { display: none; }
+  /* les niveaux restent accessibles, en mini-boutons sur une ligne (un clic quitte la correction) */
+  body.corrige .levels { margin-top: 8px; gap: 4px; }
+  body.corrige .lvl { padding: 4px 6px; font-size: 11.5px; }
+  body.corrige .lvl .dots { display: inline; margin: 0 4px 0 0; font-size: 8px; }
+  body.corrige .lvl small { display: none; }
+  /* rien ne se tasse (la question gardait sa hauteur minimale et son contenu débordait) : le bloc de
+     correction prend la place qui reste, le calcul écrit défile seul s'il est long, sinon le panneau défile */
   body.corrige .panel { display: flex; flex-direction: column; }
-  body.corrige .panel > .stepbar { flex: 1 1 auto; min-height: 9em; display: flex; flex-direction: column; padding: 14px 18px; }
-  body.corrige .stepbar .calcs-zone { flex: 0 1 auto; min-height: 0; max-height: none; padding: 6px 10px; }
+  body.corrige .panel > * { flex-shrink: 0; }
+  body.corrige .panel > .stepbar { flex: 1 0 auto; display: flex; flex-direction: column; padding: 14px 18px; }
+  body.corrige .stepbar > * { flex-shrink: 0; }
+  body.corrige .stepbar .calcs-zone { max-height: 34vh; padding: 6px 10px; }
   body.corrige .stepbar .calcs { font-size: 19px; }
   body.corrige .stepbar .say { font-size: 19px; line-height: 1.5; }
   body.corrige .stepbar .corr-tete b { font-size: 13px; }
