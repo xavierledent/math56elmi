@@ -144,7 +144,10 @@ button, input { font: inherit; }
 .figure-card:has(.stepbar) svg { max-height: calc(100vh - 300px); }
 .en-correction > :not(.stepbar) { display: none; }
 .stepbar { width: 100%; background: var(--bg); border: 1.5px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 12px; padding: 10px 14px; }
-.stepbar .say { font-size: 16px; line-height: 1.55; text-align: center; min-height: 2.4em; animation: reveal .35s ease; }
+.stepbar .say { font-size: 16px; line-height: 1.55; text-align: center; min-height: 2.4em; }
+/* nouvelle phrase : elle s'éclaire doucement, sans repartir du blanc */
+.stepbar .say.change { animation: phrase .3s ease; }
+@keyframes phrase { from { opacity: .45; } to { opacity: 1; } }
 .stepbar .say .sub { color: var(--ink2); font-size: .9em; }
 .stepbar .nav { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .stepbar .count { font: 600 12px var(--ui); color: var(--ink2); min-width: 72px; text-align: center; }
@@ -829,17 +832,27 @@ function showStep(i) {
   i = Math.max(0, Math.min(n - 1, i));
   sol.i = i;
   // bandeau de la correction : son propre bloc (les autres outils sont masqués pendant la correction)
+  // le bandeau est construit une fois, puis mis à jour sur place (rien ne clignote d'une étape à l'autre)
   let bar = $('figTools').querySelector('.stepbar');
-  if (!bar) { bar = document.createElement('div'); bar.className = 'stepbar'; $('figTools').prepend(bar); }
+  if (!bar) {
+    bar = document.createElement('div'); bar.className = 'stepbar';
+    bar.innerHTML = '<div class="say"></div><div class="nav"><button class="btn" id="sPrev">◀ Précédent</button>'
+      + '<span class="count"></span><button class="btn" id="sAgain">↻ Rejouer</button><button class="btn go" id="sNext"></button></div>';
+    $('figTools').prepend(bar);
+    $('sPrev').onclick = () => showStep(App.sol.i - 1);
+    $('sAgain').onclick = () => showStep(App.sol.i);
+    $('sNext').onclick = () => showStep(App.sol.i + 1);
+  }
   $('figTools').classList.add('en-correction');
-  bar.innerHTML = `<div class="say">${sol.steps[i].say}</div><div class="nav">`
-    + `<button class="btn" id="sPrev"${i ? '' : ' disabled'}>◀ Précédent</button>`
-    + `<span class="count">Étape ${i + 1} / ${n}</span>`
-    + `<button class="btn" id="sAgain">↻ Rejouer</button>`
-    + `<button class="btn go" id="sNext"${i < n - 1 ? '' : ' disabled'}>${i < n - 1 ? 'Étape suivante ▶' : 'Terminé ✓'}</button></div>`;
-  $('sPrev').onclick = () => showStep(i - 1);
-  $('sAgain').onclick = () => showStep(i);
-  $('sNext').onclick = () => showStep(i + 1);
+  const say = bar.querySelector('.say');
+  if (say.innerHTML !== sol.steps[i].say) {
+    say.innerHTML = sol.steps[i].say;
+    say.classList.remove('change'); void say.offsetWidth; say.classList.add('change');
+  }
+  bar.querySelector('.count').textContent = `Étape ${i + 1} / ${n}`;
+  $('sPrev').disabled = !i;
+  $('sNext').disabled = i >= n - 1;
+  $('sNext').textContent = i < n - 1 ? 'Étape suivante ▶' : 'Terminé ✓';
   const lines = sol.steps.slice(0, i + 1).map(st => st.write).filter(Boolean);
   // Calcul compact, pour laisser la place à la figure (retour à la ligne seulement si la place manque) :
   // une égalité qui commence par « = » continue la ligne précédente, et les lignes sans « = »
@@ -855,11 +868,19 @@ function showStep(i) {
   // pas de ligne écrite (la figure porte tout le calcul) : pas de cadre de correction
   if (rows.length) feedback('sol', '▶ Correction', rows.map(r => `<p class="step calcs">${r.join(' ')}</p>`).join(''));
   else clearFeedback();
+  // Étape suivante, la précédente jouée jusqu'au bout : on joue seulement la nouvelle étape, comme l'élève
+  // qui avance (rien n'est remis à zéro, donc rien ne clignote). Sinon (Précédent, Rejouer, saut) :
+  // retour au départ, les étapes déjà vues rejouées instantanément, puis l'étape courante animée.
+  const suite = sol.jouee === i - 1 && sol.S;
+  sol.jouee = -1;
   play(async () => {
-    const S = sol.reset();
-    animScale = 0;                           // les étapes déjà vues sont rejouées instantanément
-    try { for (let j = 0; j < i; j++) await sol.steps[j].run(S); } finally { animScale = 1; }
-    await sol.steps[i].run(S);
+    if (!suite) {
+      sol.S = sol.reset();
+      animScale = 0;
+      try { for (let j = 0; j < i; j++) await sol.steps[j].run(sol.S); } finally { animScale = 1; }
+    }
+    await sol.steps[i].run(sol.S);
+    sol.jouee = i;
   });
 }
 function boot(key) {
@@ -2337,7 +2358,7 @@ function creerRemplir(ctx) {
       L.innerHTML = st.trouves.map(t => `<p class="fv feuille">${t}</p>`).join('');
       L.scrollTop = L.scrollHeight;
       const n = q.lignes.length;
-      pop.hidden = !st.fini || !n || st.ferme;
+      planifierSimpl();
       if (!st.fini) { nav.style.display = 'none'; return; }
       nav.style.display = '';
       if (!n) { nav.innerHTML = `<span class="count">La formule remplie est déjà la forme finale ✓</span>`; return; }
@@ -2359,8 +2380,18 @@ function creerRemplir(ctx) {
       $z('#nSuiv').disabled = st.ligne >= n;
       $z('#nSuiv').textContent = st.ligne < n ? (st.ligne ? 'Ligne suivante ▶' : 'Simplifier ▶') : 'Compare avec ta feuille ✓';
       $z('#nTout').disabled = st.ligne >= n;
-      // les lignes : une seule mise à jour par image (la correction rejoue les étapes précédentes d'un coup)
-      if (!imageSimpl) imageSimpl = requestAnimationFrame(() => { imageSimpl = 0; if (!$z('.simpl').hidden) lignesSimpl(); });
+    }
+    // Fenêtre ouverte ou fermée, et ses lignes : une seule mise à jour par image. La correction animée
+    // remet tout à zéro puis rejoue d'un coup les étapes précédentes : la fenêtre ne doit pas se fermer
+    // et se rouvrir entre-temps (ça relançait les animations et faisait scintiller).
+    function planifierSimpl() {
+      if (imageSimpl) return;
+      imageSimpl = requestAnimationFrame(() => {
+        imageSimpl = 0;
+        const pop = $z('.simpl'), cache = !st.fini || !q.lignes.length || st.ferme;
+        if (pop.hidden !== cache) pop.hidden = cache;
+        if (!cache) lignesSimpl();
+      });
     }
     function lignesSimpl() {
       const n = q.lignes.length, corps = $z('.simpl-corps');
@@ -2380,7 +2411,11 @@ function creerRemplir(ctx) {
       corps.querySelectorAll('.ls.arrive').forEach(p => { if (p !== ajout) p.classList.remove('arrive'); });
       // seule la dernière ligne est surlignée ; l'animation d'apparition ne joue que pour une ligne ajoutée
       corps.querySelectorAll('.ls:not(.depart)').forEach((p, k) => p.classList.toggle('new', k === st.ligne - 1));
-      if (ajout) { ajout.classList.add('arrive'); requestAnimationFrame(() => { corps.scrollTop = Math.max(0, ajout.offsetTop + ajout.offsetHeight - corps.clientHeight + 8); }); }
+      if (ajout) {
+        // l'animation d'apparition ne joue qu'une fois : retirée dès qu'elle est finie
+        ajout.classList.add('arrive');
+        ajout.addEventListener('animationend', () => ajout.classList.remove('arrive'), { once: true });
+        requestAnimationFrame(() => { corps.scrollTop = Math.max(0, ajout.offsetTop + ajout.offsetHeight - corps.clientHeight + 8); }); }
       // arcs de la distributivité : visibles quand la ligne « distribuer » est la dernière affichée (tracés une fois)
       const derniere = q.lignes[st.ligne - 1], svg = corps.querySelector('svg.arcs');
       const voirArcs = !!(derniere && derniere.paires && derniere.paires.length);
@@ -2428,6 +2463,8 @@ function creerRemplir(ctx) {
         p.setAttribute('stroke', COUL_ARC[i % COUL_ARC.length]);
         p.setAttribute('pathLength', '1');
         p.style.animationDelay = (reducedMotion ? 0 : k++ * 0.3) + 's';
+        // arc tracé : on fige son état final (il ne se retrace pas si la fenêtre est réaffichée)
+        p.addEventListener('animationend', () => { p.style.animation = 'none'; p.style.strokeDashoffset = '0'; }, { once: true });
         svg.appendChild(p);
       })));
       corps.appendChild(svg);
