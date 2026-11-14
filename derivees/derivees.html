@@ -458,6 +458,27 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 @keyframes trace-arc { to { stroke-dashoffset: 0; } }
 @media (prefers-reduced-motion: reduce) { svg.arcs path { animation-duration: .01s; } }
 
+/* ---------- dérivée brute (palier) et simplification active ---------- */
+.modele.fini { background: var(--ok-bg); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ok) 45%, transparent); }
+.modele .brute { display: block; font: 700 11.5px var(--ui); text-transform: uppercase; letter-spacing: .5px; color: var(--ok); line-height: 1.4; }
+/* trois lignes proposées, l'une sous l'autre, en pleine largeur */
+.simpl-choix { flex: none; padding: 8px 12px 10px; border-top: 1px solid var(--line); background: var(--bg); }
+.simpl-choix[hidden] { display: none; }
+.choix-titre { margin: 0 0 6px; font: 600 13px var(--ui); color: var(--ink2); }
+.choix-titre b { color: var(--accent); text-transform: uppercase; letter-spacing: .4px; }
+.choix-lignes { display: flex; flex-direction: column; gap: 6px; }
+.opt-ligne { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 4px 12px; text-align: left; cursor: pointer;
+  border: 1.5px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); transition: border-color .15s, background .15s; }
+.opt-ligne:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, #fff); }
+.opt-ligne .lettre { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 700 12px var(--ui); color: #fff; background: var(--accent); }
+.opt-ligne .m { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 22px; line-height: 1.6; }
+.opt-ligne.faux { border-color: var(--ko); background: var(--ko-bg); cursor: default; opacity: .75; }
+.opt-ligne.faux .lettre { background: var(--ko); }
+.opt-ligne.faux .m { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ko) 60%, transparent); }
+.simpl-choix .piste { margin: 8px 0 0; padding: 6px 10px; border-radius: 8px; background: var(--ko-bg); color: var(--ink); font-size: 15px; }
+.simpl-choix .piste b { color: var(--ko); font-family: var(--ui); margin-right: 4px; }
+@media (max-width: 560px) { .opt-ligne { min-height: 40px; padding: 3px 8px; } .opt-ligne .m { font-size: 18px; } }
+
 /* @PLEIN-ECRAN:CSS début : module partagé, repris par 4eme/src/build.mjs */
 .pe-bouton { flex: none; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0;
   color: #1B2A4A; background: #fff; border: 1.5px solid #D3D2C9; border-radius: 10px; cursor: pointer; }
@@ -721,7 +742,7 @@ function storeGet(k, d) { try { const v = localStorage.getItem(k); return v === 
 function storeSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
 // key : préfixe des clés localStorage, propre à chaque outil (vec4, comp4…)
-const App = { key: 'vec4', m: null, inst: null, level: {}, score: {}, solved: false, revealed: false };
+const App = { key: 'der56', m: null, inst: null, level: {}, score: {}, solved: false, revealed: false };
 
 function feedback(type, title, html) {
   const fb = $('fb'), cls = 'fb show ' + type;
@@ -804,9 +825,8 @@ function setState() {
   $('bCheck').disabled = App.solved;
   $('bHint').disabled = App.solved;
   $('bNext').classList.toggle('pulse', App.solved);
-  const s = App.score[App.m.id + '.' + App.level[App.m.id]] || 0;
-  if (App.level[App.m.id] === 0) { $('score').innerHTML = 'Mode Explorer : manipule librement, rien n’est noté.'; return; }
-  $('score').innerHTML = s ? `Réussies à ce niveau : <b>${s}</b>` : (App.m.scoreVide || 'Chaque question est tirée au hasard : recommence autant que tu veux !');
+  // pas de score dans cet outil (choix du professeur) : seulement un mot d'encouragement
+  $('score').innerHTML = App.m.scoreVide || 'Chaque question est tirée au hasard : recommence autant que tu veux !';
 }
 function doCheck() {
   if (App.solved || !App.inst.check || App.level[App.m.id] === 0) return;
@@ -814,7 +834,6 @@ function doCheck() {
   if (!r) return;
   if (r.ok) {
     App.solved = true;
-    if (!App.revealed) { const k = App.m.id + '.' + App.level[App.m.id]; App.score[k] = (App.score[k] || 0) + 1; }
     feedback('ok', 'Bravo ! ✓', r.msg || '');
   } else feedback('ko', r.empty ? 'Il manque ta réponse' : 'Pas encore…', r.msg || '');
   setState();
@@ -1826,9 +1845,9 @@ function genFonction(genre, niv) {
   return 'x^2+1';
 }
 
-// Étape 1 du déroulé : reconnaître la formule, puis nommer les morceaux f, g, u. cfg.sansOp : formules annoncées par l'onglet (le premier choix est sauté) ;
-// cfg.ops : formules proposées au premier choix.
-function creerFormule(ctx, cfg = {}) {
+// Étape 1 du déroulé : nommer les morceaux f, g, u. La formule est toujours donnée (décision du professeur,
+// 14/11/2026 : la choisir alourdissait beaucoup pour peu de gain) ; elle s'écrit sous la fonction.
+function creerFormule(ctx) {
     const lv = 3;
     ctx.svg.style.display = 'none';
     const zone = document.createElement('div');
@@ -1859,17 +1878,14 @@ function creerFormule(ctx, cfg = {}) {
       const ph = [];
       q.donnees = [];
       (function visite(T) {
-        // formule annoncée par l'onglet : la question ne demande pas de la reconnaître
-        // (aussi sous un nombre en facteur : 2√(4x − 1), la formule de √u reste donnée)
-        const haut = !T.parent || (T.parent.d.op === 'kf' && !T.parent.parent);
-        if (haut && cfg.sansOp && cfg.sansOp.includes(T.d.op)) q.donnees.push(T); else ph.push({ type: 'op', T });
+        q.donnees.push(T);                      // formule donnée
         if (lv >= 2 && OPS_MORCEAUX.includes(T.d.op)) ph.push({ type: 'pieces', T });
         if (lv >= 3) T.kids.forEach(k => { if (aDecouper(k)) visite(k); });
       })(T);
       return ph;
     }
     function reset() {
-      st = { i: 0, choix: null, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {} };
+      st = { i: 0, lab: {}, sel: null, ouverts: new Set(), opDe: {}, tagRole: {} };
       q.donnees.forEach(T => valideOp({ T }, T.d.op));
       if (!q.phases.length) st.fini = true;
       dessiner();
@@ -1877,7 +1893,7 @@ function creerFormule(ctx, cfg = {}) {
     const phase = () => q.phases[st.i];
 
     /* ---------- dessin ---------- */
-    function dessiner(opt = {}) {
+    function dessiner() {
 
       const ph = phase();
       const marks = new Map();
@@ -1886,7 +1902,6 @@ function creerFormule(ctx, cfg = {}) {
         const parentOuvert = T.parent && st.ouverts.has(T.parent.id);
         const cible = ph && ph.type === 'pieces' && T.parent === ph.T;
         if (cible) m.cls += ' cible';
-        else if (opt.indice && ph && T.parent === ph.T) m.cls += ' indice';
         if (st.ouverts.has(T.id)) m.cls += ' ouvert';
         const role = etiquette(T);
         if (role) {
@@ -1895,7 +1910,6 @@ function creerFormule(ctx, cfg = {}) {
           let n = 0; for (let p = T.parent; p; p = p.parent) if (etiquette(p)) n++;
           if (n) m.cls += ' lab-d' + Math.min(n, 3);
         }
-        if (ph && ph.T === T && ph.type === 'op') m.cls += ' courant';
         if (st.sel && ph && ph.type === 'pieces' && T.parent === ph.T) m.cls += ' choisissable';
         if (m.cls || m.op || m.lab) marks.set(T.node, m);
       }
@@ -1924,16 +1938,9 @@ function creerFormule(ctx, cfg = {}) {
     /* ---------- zone réponse (panneau de gauche) ---------- */
     function dessinerReponse() {
 
-      if (st.fini) { ctx.q.innerHTML = `<p class="qtitre">Formules trouvées ✓</p><p class="qhint">Elles sont écrites sous la fonction. Passe à une autre question !</p>`; return; }
+      if (st.fini) { ctx.q.innerHTML = `<p class="qtitre">Morceaux nommés ✓</p>`; return; }
       const ph = phase();
-      if (ph.type === 'op') {
-        const quoi = ph.T.parent ? `Pour dériver <span class="qui r-${ph.T.role}">${ph.T.role === 'terme' ? 'ce terme' : ph.T.role}</span>, quelle formule ?` : 'Quelle formule en premier ?';
-        const tout = ORDRE_FORMULES.filter(o => q.comp || !FORMULES[o].comp);
-        const ops = cfg.ops && !ph.T.parent && cfg.ops.includes(ph.T.d.op) ? tout.filter(o => cfg.ops.includes(o)) : tout;
-        ctx.q.innerHTML = `<p class="qtitre">${quoi}</p><div class="cartes">` + ops.map(o =>
-          `<button class="carte${st.choix === o ? ' on' : ''}" data-op="${o}"><small>${FORMULES[o].nom}</small><span class="mw"><span class="m">${FORMULES[o].f}</span></span></button>`).join('') + '</div>';
-        ctx.q.querySelectorAll('.carte').forEach(b => b.onclick = () => { st.choix = b.dataset.op; ctx.changed(); dessinerReponse(); });
-      } else {
+      {
         const roles = rolesDe(ph);
         ctx.q.innerHTML = `<p class="qtitre">Place ${roles.length > 1 ? 'les étiquettes' : 'l’étiquette'} sur ${roles.length > 1 ? 'les morceaux' : 'le morceau'} :</p><div class="puces">`
           + roles.map(r => `<button class="puce r-${r}${st.sel === r ? ' on' : ''}${Object.values(st.lab).includes(r) && ph.T.kids.some(k => st.lab[k.id] === r) ? ' place' : ''}" data-r="${r}">${r}</button>`).join('')
@@ -1977,18 +1984,6 @@ function creerFormule(ctx, cfg = {}) {
     function check() {
       if (st.fini) return { ok: true, msg: 'Toutes les formules sont trouvées.' };
       const ph = phase();
-      if (ph.type === 'op') {
-        if (!st.choix) return { ok: false, empty: true, msg: 'Clique sur une des formules.' };
-        const ok = formulesOk(ph.T.d);
-        if (!ok.includes(st.choix)) return { ok: false, msg: pisteOp(ph.T, st.choix) };
-        // autre formule juste (k/u par le quotient…) : on garde celle de la composée, plus rapide
-        if (st.choix !== ph.T.d.op) {
-          valideOp(ph, ph.T.d.op);
-          return suite(`Ça marche aussi avec ${article(st.choix)}, mais ici la formule de la <b>composée</b> ${FORMULES[ph.T.d.op].f} va plus vite : on la prend.`);
-        }
-        valideOp(ph, st.choix);
-        return suite(`C’est bien ${article(st.choix)}.`);
-      }
       const roles = rolesDe(ph), kids = ph.T.kids;
       if (roles.some(r => !kids.some(k => st.lab[k.id] === r))) return { ok: false, empty: true, msg: 'Place chaque étiquette sur un morceau.' };
       const juste = kids.every((k, i) => {
@@ -1999,62 +1994,31 @@ function creerFormule(ctx, cfg = {}) {
       kids.forEach(k => { st.tagRole[k.id] = st.lab[k.id]; });
       return suite('Les morceaux sont bien nommés.');
     }
-    const article = op => ({ somme: 'une somme', kf: 'un nombre × une fonction', produit: 'un produit', quotient: 'un quotient', puissance: 'une composée uⁿ', inverse: 'une composée 1/u', racine: 'une composée √u', base: 'une formule de base' }[op]);
     function suite(msg) {
-      st.choix = null; st.sel = null;
+      st.sel = null;
       if (st.i < q.phases.length - 1) {
         st.i++;
         dessiner();
-        const ph = phase();
-        feedback('ok', 'Oui ! ✓', msg + ' ' + (ph.type === 'pieces' ? 'Place maintenant les étiquettes.' : `Et pour ${ph.T.role === 'terme' ? 'ce terme' : 'le morceau ' + ph.T.role} ?`));
+        feedback('ok', 'Oui ! ✓', msg + ' Nomme maintenant les morceaux suivants.');
         return null;
       }
       st.fini = true;
       dessiner();
-      return { ok: true, msg: msg + (lv === 3 ? ' Tu as trouvé toutes les formules !' : '') };
-    }
-    function pisteOp(T, choix) {
-      const op = T.d.op;
-      if (choix === 'produit' && op === 'kf') return 'C’est bien une multiplication, mais un des facteurs est un <b>nombre</b> : la formule <i>k</i>·<i>f</i> est plus simple.';
-      if (choix === 'somme' && op !== 'somme') return 'Il y a des + ou des −, mais ils sont <b>à l’intérieur</b> d’un morceau. Quelle opération relie les grands morceaux ?';
-      if (choix === 'base') return 'Cette fonction n’est pas une ligne du formulaire telle quelle : il faut d’abord une formule qui la découpe.';
-      if (FORMULES[choix].comp && !FORMULES[op]?.comp) return 'Ce n’est pas une composée : rien n’est « emboîté » autour de toute la fonction.';
-      if (op === 'kf' && T.src.t === 'q') return 'On divise par un <b>nombre</b> : c’est un nombre × une fonction (diviser par 2, c’est multiplier par ½).';
-      return 'Ce n’est pas la formule à appliquer en premier. Regarde comment sont reliés les <b>grands morceaux</b> de la fonction : par + ou −, par ×, par une barre de fraction, par une puissance, par une racine ? (💡 L’indice les encadre.)';
+      return { ok: true, msg };
     }
     function pistePieces(ph) {
       const op = st.opDe[ph.T.id] || ph.T.d.op;
       if (op === 'quotient') return '<i>f</i> est en haut (le numérateur), <i>g</i> en bas (le dénominateur).';
       return '<i>u</i> est ce qui est « à l’intérieur » : dans la parenthèse, sous la racine ou au dénominateur.';
     }
-    function hint() {
-      const ph = phase();
-      if (ph.type === 'op') {
-        dessiner({ indice: true });
-        const n = ph.T.kids.length;
-        if (!n) return 'Cette fonction est simple : regarde le formulaire, lignes « formules de base » et « opérations ».';
-        return `Voici ${n > 1 ? 'les grands morceaux' : 'le grand morceau'} de la fonction (encadré${n > 1 ? 's' : ''}). Comment ${n > 1 ? 'sont-ils reliés' : 'est-il « emballé »'} : par + ou −, par ×, par une barre de fraction, par une puissance, par une racine ?`;
-      }
-      return pistePieces(ph);
-    }
+    function hint() { return pistePieces(phase()); }
 
     /* ---------- correction pas à pas ---------- */
     function solve() {
       const steps = [];
       q.phases.forEach((ph, j) => {
-        const T = ph.T, qui = T.parent ? `Le morceau ${T.role === 'terme' ? '' : '<b>' + T.role + '</b> '}${E.math(T.node)}` : 'La fonction';
-        if (ph.type === 'op') {
-          const op = T.d.op, F0 = FORMULES[op];
-          steps.push({
-            say: `${qui} est ${article(op)}. ${raison(T)}`,
-            run: async () => {
-              st.choix = op; dessinerReponse();
-              await wait(500);
-              valideOp(ph, op); finPhase(j);
-              await wait(700);
-            }
-          });
-        } else {
+        const T = ph.T;
+        {
           const roles = rolesDe(ph);
           steps.push({
             say: T.kids.map((k, i) => `<span class="qui r-${roles[i]}">${roles[i]}</span> = ${E.math(k.node)}`).join(' ; ') + '.',
@@ -2069,23 +2033,10 @@ function creerFormule(ctx, cfg = {}) {
       return { reset() { reset(); return {}; }, steps };
     }
     function finPhase(j) {
-      st.choix = null; st.sel = null;
+      st.sel = null;
       if (j < q.phases.length - 1) st.i = j + 1; else st.fini = true;
       dessiner();
     }
-    function raison(T) {
-      return {
-        somme: 'On dérive terme par terme.',
-        kf: 'Le nombre reste devant.',
-        produit: 'Deux morceaux sont multipliés.',
-        quotient: 'Il y a une grande barre de fraction.',
-        puissance: 'Une expression entière est élevée à une puissance.',
-        inverse: 'Un nombre est divisé par une expression.',
-        racine: 'Une expression entière est sous la racine.',
-        base: 'C’est une ligne du formulaire.', cst: ''
-      }[T.d.op];
-    }
-
     return {
       zone, charger, dessiner, phase: () => phase(), estFini: () => !!(st && st.fini), source: () => q && q.src,
       check, hint, solve,
@@ -2096,9 +2047,9 @@ function creerFormule(ctx, cfg = {}) {
 
 
 /* =====================================================================
-   Onglet 2 : « Remplir la formule » : choisir la dérivée des morceaux simples,
-   glisser les tuiles f, g, f′, g′ (ou u, u′) dans les cases de la formule,
-   puis faire défiler les lignes de simplification jusqu'à la forme finale.
+   Étapes 2 à 5 : choisir la dérivée des morceaux simples, glisser les tuiles
+   f, g, f′, g′ (ou u, u′) dans les cases de la formule ; la formule remplie est
+   la dérivée brute (un palier) ; puis simplifier en choisissant chaque ligne parmi trois.
    ===================================================================== */
 // phrase de la correction pour chaque étape de la simplification
 const DIRE_LIGNE = {
@@ -2107,6 +2058,122 @@ const DIRE_LIGNE = {
   'enlever les parenthèses': 'On enlève les parenthèses : le « − » devant change le signe de chaque terme.',
   'réduire': 'On réduit : on regroupe les termes de même degré.'
 };
+// action annoncée au-dessus des trois lignes proposées
+const ACTION_LIGNE = { distribuer: 'Distribue', 'calculer les produits': 'Calcule les produits', 'enlever les parenthèses': 'Enlève les parenthèses', 'réduire': 'Réduis' };
+// piste donnée quand l'élève choisit une ligne fausse : elle nomme l'erreur glissée dans cette ligne
+const PISTES_SIMPL = {
+  oubliProduit: 'En distribuant, chaque terme du 1er facteur multiplie <b>chaque</b> terme du 2e : il manque un produit dans cette ligne.',
+  signeProduit: 'Regarde le signe de chaque produit : négatif × positif donne négatif, négatif × négatif donne positif.',
+  exposant: 'Compte les <i>x</i> : <i>x</i>·<i>x</i><sup>2</sup> = <i>x</i><sup>3</sup> (on additionne les exposants).',
+  parentheses: 'Le « − » devant la parenthèse change le signe de <b>chaque</b> terme de la parenthèse, pas seulement du premier.',
+  oubliMoins: 'Le « − » devant la parenthèse ne disparaît pas : il change le signe de chaque terme.',
+  reduire: 'En regroupant les termes de même degré, garde bien le signe qui est devant chaque terme.',
+  oubliTerme: 'Un terme a disparu en route : recopie bien chaque terme.',
+  coef: 'Recalcule les nombres : on multiplie les nombres entre eux.',
+  puiss: 'L’exposant de la parenthèse ne change plus pendant la simplification : recopie-le tel quel.',
+  signe: 'Attention au signe d’un des termes.'
+};
+// opposé d'un terme
+const opposeT = t => (t.t === 'g' ? t.a : t.t === 'n' ? E.N(fneg(t.v)) : E.G(t));
+// applique fn aux termes « atomes » d'une ligne : termes de la somme (et ceux d'une parenthèse soustraite),
+// au numérateur pour un quotient. fn(terme, rang) renvoie le remplaçant, null pour le supprimer, undefined pour le garder.
+function mapAtomes(a, fn) {
+  let k = 0;
+  const go = n => {
+    if (n.t === 's') { const b = n.a.map(go).filter(x => x !== null); return b.length ? (b.length === 1 ? b[0] : E.S(...b)) : E.N(0); }
+    if (n.t === 'g' && n.a.t === 's') return E.G(go(n.a));
+    const r = fn(n, k++); return r === undefined ? n : r;
+  };
+  return a.t === 'q' ? E.Q(go(a.n), a.d) : go(a);
+}
+const nbAtomes = a => { let n = 0; mapAtomes(a, () => { n++; }); return n; };
+// copie d'une ligne où le premier nœud qui convient (ordre d'écriture) est remplacé : f(nœud) → remplaçant ou undefined
+function remplacePremier(a, f) {
+  let fait = false;
+  const go = n => {
+    if (fait || !n || typeof n !== 'object' || !n.t) return n;
+    const r = f(n); if (r !== undefined) { fait = true; return r; }
+    const b = Object.assign({}, n);
+    for (const k of ['a', 'n', 'd', 'b']) { const c = n[k]; if (Array.isArray(c)) b[k] = c.map(go); else if (c && c.t) b[k] = go(c); }
+    return b;
+  };
+  const r = go(a); return fait ? r : null;
+}
+// premier nombre (autre que 1) multiplié par 2 ; exposant d'une parenthèse changé
+const nombreDouble = a => remplacePremier(a, n => (n.t === 'n' && n.v.n && !feq(n.v, F(1)) ? E.N(fmul(n.v, F(2))) : undefined));
+const puissanceChangee = a => remplacePremier(a, n => (n.t === 'w' && n.b.t !== 'x' ? E.W(n.b, n.e + (n.e > 0 ? 1 : -1)) : undefined));
+// parenthèses soustraites enlevées sans changer les signes (tous = true : le « − » disparaît ;
+// sinon seul le premier terme change de signe)
+function parenthesesFausses(prev, tous) {
+  const go = n => {
+    if (n.t !== 's') return n;
+    const out = [];
+    for (const t of n.a) {
+      if (t.t === 'g' && t.a.t === 's') { const ts = t.a.a; out.push(...(tous ? ts : [opposeT(ts[0]), ...ts.slice(1)])); }
+      else out.push(t);
+    }
+    return E.S(...out);
+  };
+  return prev.t === 'q' ? E.Q(go(prev.n), prev.d) : go(prev);
+}
+// réduction avec une erreur de signe : un terme de la ligne précédente change de signe, puis on réduit
+function reductionsFausses(prev, L) {
+  const num = a => (a.t === 'q' ? a.n : a), out = [];
+  if ((prev.t === 'q') !== (L.t === 'q') || (L.t === 'q' && E.html(prev.d) !== E.html(L.d))) return out;
+  const n = nbAtomes(prev);
+  for (let i = 0; i < n; i++) {
+    const m = mapAtomes(prev, (t, k) => (k === i ? opposeT(t) : undefined)), M = E.toL(num(m));
+    if (!M) continue;
+    for (const [k, c] of [...M]) if (!c.n) M.delete(k);
+    const r = E.fromL(M, E.ordreDe(num(L)));
+    out.push(L.t === 'q' ? E.Q(r, L.d) : r);
+  }
+  return shuffle(out);
+}
+// ligne x vraiment différente de L (comparaison numérique sur des points où les deux existent)
+function ligneDifferente(x, L) {
+  let n = 0, diff = false;
+  for (const v of [0.37, 0.81, 1.43, 2.29, 3.1, 4.7]) {
+    const a = E.ev(x, v), b = E.ev(L, v);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+    n++; if (Math.abs(a - b) > 1e-7 * (1 + Math.abs(b))) diff = true;
+  }
+  return n >= 3 && diff;
+}
+// deux lignes fausses pour la ligne L (qui suit prev), chacune avec une erreur typique de l'action
+function lignesFausses(prev, L) {
+  const c = [], n = nbAtomes(L), idx = shuffle([...Array(n).keys()]);
+  const surL = (i, f) => mapAtomes(L, (t, k) => (k === i ? f(t) : undefined));
+  const oppose = faute => idx.forEach(i => c.push([surL(i, opposeT), faute]));
+  const oubli = faute => { if (n > 1) idx.forEach(i => c.push([surL(i, () => null), faute])); };
+  const expo = () => idx.forEach(i => c.push([surL(i, t => {
+    const M = E.toL(t); if (!M || M.size !== 1) return undefined;
+    const [[k, v]] = [...M]; return k >= 2 ? E.fromL(new Map([[k - 1, v]])) : undefined;
+  }), 'exposant']));
+  switch (L.lab) {
+    case 'distribuer': oubli('oubliProduit'); oppose('signeProduit'); break;
+    case 'calculer les produits': oppose('signeProduit'); expo(); oubli('oubliTerme'); break;
+    case 'enlever les parenthèses': c.push([parenthesesFausses(prev, false), 'parentheses'], [parenthesesFausses(prev, true), 'oubliMoins']); oppose('signe'); break;
+    case 'réduire': reductionsFausses(prev, L).forEach(x => c.push([x, 'reduire'])); oubli('oubliTerme'); break;
+  }
+  // erreurs possibles sur toute ligne
+  c.push([nombreDouble(L), 'coef'], [puissanceChangee(L), 'puiss']);
+  oppose('signe'); oubli('oubliTerme');
+  // tri : d'abord des erreurs de genres différents, puis le reste
+  const vus = new Set([E.html(L)]), fautes = new Set(), res = [];
+  const prendre = unique => {
+    for (const [x, f] of c) {
+      if (res.length >= 2) return;
+      if (!x || (unique && fautes.has(f))) continue;
+      const h = E.html(x);
+      if (vus.has(h) || !ligneDifferente(x, L)) continue;
+      vus.add(h); fautes.add(f); res.push({ node: x, faute: f });
+    }
+  };
+  prendre(true); prendre(false);
+  return res;
+}
+
 const NOM_TUILE = { f: 'f', g: 'g', u: 'u', fp: 'f′', gp: 'g′', up: 'u′' };
 const COUL_TUILE = { f: 'f', g: 'g', u: 'u', fp: 'f', gp: 'g', up: 'u' };
 
@@ -2238,15 +2305,9 @@ function creerRemplir(ctx) {
       // fenêtre de la simplification : toute la place pour écrire les lignes du calcul
       + '<div class="simpl" role="dialog" aria-label="Simplification" hidden><div class="simpl-tete"><b>Simplifier</b><span class="m rappel"></span>'
       + '<button class="btn simpl-x" aria-label="Fermer la simplification">✕</button></div>'
-      + '<div class="simpl-corps" aria-live="polite"></div><div class="simpl-nav"></div></div>';
+      + '<div class="simpl-corps" aria-live="polite"></div><div class="simpl-choix" aria-live="polite"></div><div class="simpl-nav"></div></div>';
     ctx.svg.parentNode.appendChild(zone);
     const $z = s => zone.querySelector(s);
-    // flèches du clavier : ligne suivante / précédente de la simplification
-    if (!window.derClavier) addEventListener('keydown', e => window.derClavier && window.derClavier(e));
-    window.derClavier = e => {
-      if (/INPUT|TEXTAREA/.test(document.activeElement.tagName) || App.sol) return;
-      if (e.key === 'ArrowRight') $z('#nSuiv')?.click(); else if (e.key === 'ArrowLeft') $z('#nPrec')?.click();
-    };
 
     let q = null, st = null, numQuestion = 0;
 
@@ -2273,12 +2334,14 @@ function creerRemplir(ctx) {
       q.depart = E.html(et[0]) === E.html(rempli) ? et[0] : rempli;
       const fin = E.D(a, { composees: comp });
       if (!q.lignes.length && E.html(rempli) !== E.html(fin)) q.lignes = [fin];
+      // à chaque ligne : la bonne et deux fausses, mélangées (tirées une fois par question)
+      q.options = q.lignes.map((l, i) => shuffle([{ node: l, faute: null }, ...lignesFausses(i ? q.lignes[i - 1] : q.depart, l)]));
       reset();
       if (!silencieux) setState();
 
     }
     function reset() {
-      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false };
+      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false, palier: false, fauxL: new Set(), pisteL: '' };
       sauterAuto();
       dessiner();
     }
@@ -2302,7 +2365,7 @@ function creerRemplir(ctx) {
     }
     function sauterAuto() {
       while (st.i < q.phases.length && q.phases[st.i].type === 'auto') { terminerPlan(q.phases[st.i].p); st.i++; }
-      if (st.i >= q.phases.length) { st.fini = true; st.ligne = 0; }
+      if (st.i >= q.phases.length) { st.fini = true; st.ligne = 0; st.palier = q.lignes.length > 0; }
     }
     // la phase courante est réussie : on passe à la suivante
     function avancer() {
@@ -2347,7 +2410,8 @@ function creerRemplir(ctx) {
       const t = remplie(p, st.fini);
       casesDe(t).forEach((h, i) => { if (st.faux.has(i) && !st.fini) h.cls = 'faux'; if (!h.v && st.sel) h.cls = 'attend'; h.id = h.id + ':' + i; });
       const prime = sd ? (sd.s.id[0] === 't' ? '(terme)′' : NOM_TUILE[sd.s.id + 'p'] || NOM_TUILE[sd.s.id]) : '<i>f</i>′(<i>x</i>)';
-      $z('.modele').innerHTML = `<span class="m"><span class="prime">${prime} =</span> ${E.html(t)}</span>`;
+      $z('.modele').innerHTML = (st.fini ? '<span class="brute">Dérivée brute ✓</span>' : '') + `<span class="m"><span class="prime">${prime} =</span> ${E.html(t)}</span>`;
+      $z('.modele').classList.toggle('fini', st.fini);
       requestAnimationFrame(() => ajuste($z('.modele'), 30, 16));
       $z('.modele').querySelectorAll('.trou').forEach(el => { el.onclick = () => clicCase(el); });
       dessinerLignes();
@@ -2361,7 +2425,12 @@ function creerRemplir(ctx) {
       planifierSimpl();
       if (!st.fini) { nav.style.display = 'none'; return; }
       nav.style.display = '';
-      if (!n) { nav.innerHTML = `<span class="count">La formule remplie est déjà la forme finale ✓</span>`; return; }
+      if (!n) { nav.innerHTML = `<span class="count">La dérivée brute est déjà la forme finale ✓</span>`; return; }
+      if (st.palier) {
+        nav.innerHTML = '<button class="btn go" id="nSimpl">Simplifier ▶</button>';
+        $z('#nSimpl').onclick = () => { st.palier = false; clearFeedback(); dessiner(); if (ctx.majEtapes) ctx.majEtapes(); };
+        return;
+      }
       nav.innerHTML = st.ferme ? '<button class="btn go" id="nOuvrir">Voir la simplification ▸</button>' : '';
       if (st.ferme) { $z('#nOuvrir').onclick = () => { st.ferme = false; dessinerLignes(); }; return; }
       dessinerSimpl();
@@ -2373,13 +2442,36 @@ function creerRemplir(ctx) {
     function dessinerSimpl() {
       const n = q.lignes.length, corps = $z('.simpl-corps');
       if (+corps.dataset.q !== q.num) construireSimpl();
-      // navigation : mise à jour sur place
-      $z('.simpl-nav').style.display = App.sol ? 'none' : '';          // pendant la correction animée, c'est le bandeau d'étapes qui avance
-      $z('#nPrec').disabled = !st.ligne;
-      $z('.simpl-nav .count').textContent = `Ligne ${st.ligne} / ${n}`;
-      $z('#nSuiv').disabled = st.ligne >= n;
-      $z('#nSuiv').textContent = st.ligne < n ? (st.ligne ? 'Ligne suivante ▶' : 'Simplifier ▶') : 'Compare avec ta feuille ✓';
-      $z('#nTout').disabled = st.ligne >= n;
+      $z('.simpl-nav .count').textContent = st.ligne < n ? `Ligne ${st.ligne + 1} / ${n}` : 'Forme finale ✓ Compare avec ta feuille.';
+      dessinerChoix();
+    }
+    // les trois lignes proposées pour la ligne suivante (une seule est juste)
+    function dessinerChoix() {
+      const box = $z('.simpl-choix'), n = q.lignes.length;
+      // pendant la correction animée, c'est le bandeau d'étapes qui avance
+      if (App.sol || st.ligne >= n) { box.hidden = true; box.innerHTML = ''; return; }
+      box.hidden = false;
+      const l = q.lignes[st.ligne];
+      const act = ACTION_LIGNE[l.lab] || (st.ligne === n - 1 ? 'Simplifie jusqu’à la forme finale' : 'Simplifie');
+      box.innerHTML = `<p class="choix-titre"><b>${act}</b> : choisis la ligne suivante.</p><div class="choix-lignes">`
+        + q.options[st.ligne].map((o, k) => `<button class="opt-ligne${st.fauxL.has(k) ? ' faux' : ''}" data-k="${k}"${st.fauxL.has(k) ? ' aria-disabled="true"' : ''}>`
+          + `<span class="lettre">${'ABC'[k]}</span><span class="m">= ${E.html(o.node)}</span></button>`).join('')
+        + '</div>' + (st.pisteL ? `<p class="piste"><b>Pas encore…</b> ${st.pisteL}</p>` : '');
+      box.querySelectorAll('.opt-ligne').forEach(b => {
+        ajuste(b.querySelector('.m'), 22, 12);
+        b.onclick = () => choisirLigne(+b.dataset.k);
+      });
+    }
+    function choisirLigne(k) {
+      const o = q.options[st.ligne][k];
+      if (App.sol || st.fauxL.has(k)) return;
+      if (o.faute) { st.fauxL.add(k); st.pisteL = PISTES_SIMPL[o.faute] || PISTES_SIMPL.signe; dessinerChoix(); return; }
+      st.fauxL.clear(); st.pisteL = '';
+      st.ligne++;
+      dessinerLignes();
+      dessinerReponse();
+      if (ctx.majEtapes) ctx.majEtapes();
+      if (st.ligne >= q.lignes.length && ctx.termine) ctx.termine();
     }
     // Fenêtre ouverte ou fermée, et ses lignes : une seule mise à jour par image. La correction animée
     // remet tout à zéro puis rejoue d'un coup les étapes précédentes : la fenêtre ne doit pas se fermer
@@ -2388,7 +2480,7 @@ function creerRemplir(ctx) {
       if (imageSimpl) return;
       imageSimpl = requestAnimationFrame(() => {
         imageSimpl = 0;
-        const pop = $z('.simpl'), cache = !st.fini || !q.lignes.length || st.ferme;
+        const pop = $z('.simpl'), cache = !st.fini || !q.lignes.length || st.ferme || st.palier;
         if (pop.hidden !== cache) pop.hidden = cache;
         if (!cache) lignesSimpl();
       });
@@ -2433,15 +2525,10 @@ function creerRemplir(ctx) {
       // termes des facteurs distribués, repérés dans la ligne de départ (pour les arcs)
       const marks = new Map();
       q.lignes.filter(l => l.paires).forEach(l => l.paires.forEach((pr, k) => pr.forEach((ts, j) => ts.forEach((t, i) => marks.set(t, { id: k + '-' + j + '-' + i, cls: 'tm' })))));
-      corps.innerHTML = `<p class="ls depart"><i>f</i>′(<i>x</i>) = ${E.mathMarks(q.depart, marks)}</p>`;
+      corps.innerHTML = `<p class="ls depart"><span class="eti">dérivée brute</span><i>f</i>′(<i>x</i>) = ${E.mathMarks(q.depart, marks)}</p>`;
       ajuste(corps.querySelector('.ls'), 26, 12);
       corps.scrollTop = 0;
-      const nv = $z('.simpl-nav');
-      nv.innerHTML = '<button class="btn" id="nPrec">◀ Précédent</button><span class="count"></span>'
-        + '<button class="btn go" id="nSuiv"></button><button class="btn" id="nTout">▶▶ Tout afficher</button>';
-      $z('#nPrec').onclick = () => { st.ligne--; dessinerLignes(); };
-      $z('#nSuiv').onclick = () => { st.ligne++; dessinerLignes(); if (st.ligne >= n && ctx.termine) ctx.termine(); };
-      $z('#nTout').onclick = () => { st.ligne = n; dessinerLignes(); if (ctx.termine) ctx.termine(); };
+      $z('.simpl-nav').innerHTML = '<span class="count"></span>';
     }
     // arcs de la distributivité : chaque terme du 1er facteur relié à chaque terme du 2e (une couleur par terme)
     const COUL_ARC = ['#007C74', '#A00058', '#EC6708', '#3B5C76', '#8A6D1D'];
@@ -2473,7 +2560,14 @@ function creerRemplir(ctx) {
     /* ---------- zone réponse ---------- */
     function dessinerReponse() {
 
-      if (st.fini) { ctx.q.innerHTML = '<p class="qtitre">Formule remplie ✓</p><p class="qhint">Fais défiler la simplification, ligne par ligne, et compare avec ta feuille.</p>'; return; }
+      if (st.fini) {
+        const n = q.lignes.length;
+        ctx.q.innerHTML = !n ? '<p class="qtitre">Dérivée brute ✓</p><p class="qhint">Ici, elle est déjà sous sa forme finale.</p>'
+          : st.palier ? '<p class="qtitre">Dérivée brute ✓</p><p class="qhint">La formule remplie, c’est ta dérivée : elle est juste ! Il reste à la simplifier (du calcul, plus de dérivation). Clique sur « Simplifier ▶ ».</p>'
+          : st.ligne < n ? '<p class="qtitre">Simplifie, ligne par ligne</p><p class="qhint">Dans la fenêtre, choisis la bonne ligne suivante parmi les trois.</p>'
+          : '<p class="qtitre">Forme finale ✓</p><p class="qhint">Compare avec ta feuille.</p>';
+        return;
+      }
       const ph = phase(), p = ph.p;
       if (ph.type === 'choix') {
         ctx.q.innerHTML = '<p class="qtitre">Choisis la dérivée de chaque morceau :</p>' + p.choix.map((c, i) =>
@@ -2513,8 +2607,11 @@ function creerRemplir(ctx) {
     /* ---------- vérification ---------- */
     // la formule est remplie : le Bravo vient quand la simplification est arrivée à la forme finale
     function fin(msg) {
-      if (st.ligne >= q.lignes.length) return { ok: true, msg: (msg ? msg + ' ' : '') + 'Compare avec ta feuille.' };
-      feedback('ok', 'Oui ! ✓', (msg ? msg + ' ' : '') + 'Fais maintenant défiler la simplification, ligne par ligne, jusqu’à la forme finale.');
+      const n = q.lignes.length;
+      if (st.ligne >= n) return { ok: true, msg: (msg ? msg + ' ' : '') + (n ? 'C’est la forme finale : compare avec ta feuille.' : 'Ta dérivée brute est déjà la forme finale.') };
+      feedback('ok', 'Oui ! ✓', (msg ? msg + ' ' : '') + (st.palier
+        ? 'La formule remplie, c’est ta <b>dérivée brute</b> : elle est juste ! Il reste à la simplifier : clique sur « Simplifier ▶ ».'
+        : 'Choisis la bonne ligne suivante dans la fenêtre.'));
       return null;
     }
     function check() {
@@ -2544,12 +2641,29 @@ function creerRemplir(ctx) {
       feedback('ok', 'Oui ! ✓', msg + (emboite ? ' Cette dérivée devient une tuile de la formule suivante.' : ''));
       return null;
     }
+    // piste qui nomme l'erreur commise en remplissant la formule
     function pistePlacer(p) {
-      const cs = casesDe(p.tmpl), mis = cs.map((h, i) => st.cases[cle(p, h, i)]);
-      if (p.op === 'produit') return 'Chaque terme du produit contient <b>une seule</b> dérivée : <i>f</i>′·<i>g</i> + <i>f</i>·<i>g</i>′.';
+      const cs = casesDe(p.tmpl), mis = cs.map((h, i) => st.cases[cle(p, h, i)]), att = cs.map(h => h.id);
+      const prime = id => /p$/.test(id);
+      if (p.op === 'produit') {
+        // f′·g + f·g′ : chaque terme a exactement une dérivée
+        if ((prime(mis[0]) && prime(mis[1])) || (prime(mis[2]) && prime(mis[3]))) return 'Un terme du produit contient <b>deux</b> dérivées. Chaque terme n’en contient qu’<b>une</b> : <i>f</i>′·<i>g</i> + <i>f</i>·<i>g</i>′.';
+        if (mis.filter(prime).length < 2) return 'Il manque une dérivée : <i>f</i>′·<i>g</i> + <i>f</i>·<i>g</i>′ contient <i>f</i>′ <b>et</b> <i>g</i>′.';
+        return 'Chaque dérivée va avec <b>l’autre</b> morceau : <i>f</i>′ avec <i>g</i>, et <i>f</i> avec <i>g</i>′.';
+      }
       if (p.op === 'quotient') {
-        if (mis[cs.length - 1] !== 'g') return 'En bas, c’est <i>g</i><sup>2</sup> : le dénominateur, au carré.';
-        return 'Dans le quotient, l’ordre compte : on commence par <i>f</i>′·<i>g</i> (la dérivée du haut), puis on soustrait <i>f</i>·<i>g</i>′.';
+        if (mis[4] !== 'g') return 'En bas, c’est <i>g</i><sup>2</sup> : le dénominateur, au carré (sans dérivée).';
+        if (mis[0] === 'f' && mis[3] === 'fp') return 'Dans le quotient, l’ordre compte : on commence par <i>f</i>′·<i>g</i> (la dérivée du haut), puis on soustrait <i>f</i>·<i>g</i>′.';
+        if (mis.slice(0, 4).filter(prime).length !== 2) return 'Le numérateur contient <i>f</i>′ <b>et</b> <i>g</i>′, une dans chaque produit : <i>f</i>′·<i>g</i> − <i>f</i>·<i>g</i>′.';
+        return 'Au numérateur : <i>f</i>′·<i>g</i> − <i>f</i>·<i>g</i>′. Chaque dérivée va avec <b>l’autre</b> morceau.';
+      }
+      // composées : u′ oublié, ou u′ mis à la place de u
+      const i = att.findIndex((a, k) => a !== mis[k]);
+      if (i >= 0 && att[i] === 'up') return 'Tu as oublié de multiplier par <i>u</i>′ : cette case attend la <b>dérivée</b> de <i>u</i>, pas <i>u</i> lui-même.';
+      if (i >= 0 && att[i] === 'u') {
+        if (p.op === 'racine') return 'Sous la racine, c’est <i>u</i> lui-même qui reste (sans dérivée) ; <i>u</i>′ va en haut.';
+        if (p.op === 'puissance') return 'Dans la puissance, c’est <i>u</i> lui-même qui reste (sans dérivée) ; <i>u</i>′ vient multiplier à la fin.';
+        return 'Au dénominateur, c’est <i>u</i> lui-même qui reste (sans dérivée) ; <i>u</i>′ va au numérateur.';
       }
       if (p.op === 'racine') return '<i>u</i>′ va en haut, et <i>u</i> reste sous la racine.';
       return 'Dans la puissance, on garde <i>u</i> ; puis on multiplie par la dérivée <i>u</i>′.';
@@ -2591,16 +2705,17 @@ function creerRemplir(ctx) {
           });
         }
       });
-      // somme : les dérivées choisies s'assemblent d'elles-mêmes (pas de case à remplir)
-      if (q.plan.auto) steps.push({
-        say: 'On met les dérivées des termes bout à bout : c’est <i>f</i>′(<i>x</i>).',
-        run: async () => { dessiner(); }
+      // la dérivée brute : un palier (somme : les dérivées choisies s'assemblent d'elles-mêmes)
+      const suite = q.lignes.length ? ' Elle est juste ; il reste à la simplifier, ligne par ligne.' : ' Ici, elle est déjà sous sa forme finale.';
+      steps.push({
+        say: (q.plan.auto ? 'On met les dérivées des termes bout à bout : c’est la <b>dérivée brute</b>.' : 'La formule remplie, c’est la <b>dérivée brute</b>.') + suite,
+        run: async () => { dessiner(); if (ctx.majEtapes) ctx.majEtapes(); }
       });
       // puis la simplification, ligne par ligne, jusqu'à la forme finale
       q.lignes.forEach((l, i) => steps.push({
         say: DIRE_LIGNE[l.lab] ? DIRE_LIGNE[l.lab] + (i === q.lignes.length - 1 ? ' Voilà la forme finale.' : '')
           : i === q.lignes.length - 1 ? 'Voilà la forme finale.' : i ? 'On continue de simplifier.' : 'On simplifie, ligne par ligne.',
-        run: async () => { st.ligne = i + 1; dessinerLignes(); }
+        run: async () => { st.palier = false; st.fauxL.clear(); st.pisteL = ''; st.ligne = i + 1; dessiner(); if (ctx.majEtapes) ctx.majEtapes(); }
       }));
       return { reset() { reset(); return {}; }, steps };
     }
@@ -2617,30 +2732,30 @@ function creerRemplir(ctx) {
 
 'use strict';
 /* =====================================================================
-   Les quatre onglets : le même déroulé en quatre étapes.
-     1. reconnaître la formule et les morceaux f, g, u        (creerFormule)
-     2. choisir la dérivée de chaque morceau parmi trois       (creerRemplir)
-     3. remplir la formule                                     (creerRemplir)
-     4. faire défiler la simplification jusqu'à la forme finale (creerRemplir)
-   cfg : genre (clé de GENS), comp (composées permises), formule (options de l'étape 1),
+   Les onglets : le même déroulé en cinq étapes (la formule est toujours donnée).
+     1. nommer les morceaux f, g, u                              (creerFormule)
+     2. choisir la dérivée de chaque morceau parmi trois         (creerRemplir)
+     3. remplir la formule                                       (creerRemplir)
+     4. la formule remplie est la dérivée brute : un palier      (creerRemplir)
+     5. simplifier : choisir chaque ligne parmi trois             (creerRemplir)
+   cfg : genre (clé de GENS), comp (composées permises),
          cours (onglet « Exercices du cours » : les fonctions des banques, dans l'ordre)
    ===================================================================== */
 function creerOnglet(cfg) {
   return function (ctx) {
     const niv = ctx.level;
-    const formuleDonnee = !!(cfg.formule && cfg.formule.sansOp);
-    ctx.tools.innerHTML = '<ol class="etapes" aria-label="Les quatre étapes">' + [formuleDonnee ? 'Morceaux' : 'Formule', 'Dérivées', 'Remplir', 'Simplifier']
+    ctx.tools.innerHTML = '<ol class="etapes" aria-label="Les étapes">' + ['Morceaux', 'Dérivées', 'Remplir', 'Dérivée brute', 'Simplifier']
       .map((n, i) => '<li><b><span>' + (i + 1) + '</span></b>' + n + '</li>').join('') + '</ol>';
     const cours = cfg.cours ? exercicesCours(ctx, niv, (s, c) => charger(s, c)) : null;
-    const s1 = creerFormule(ctx, cfg.formule || {});
+    const s1 = creerFormule(ctx);
     const s2 = creerRemplir(ctx);
     ctx.termine = () => doCheck();            // la simplification est arrivée à la forme finale
     let etape = 1, src = null, comp = cfg.comp;
 
-    // indicateur des quatre étapes : formule, dérivées, remplir, simplifier
+    // indicateur des étapes : morceaux, dérivées, remplir, dérivée brute, simplifier
     function majEtapes() {
       let cur = 1;
-      if (etape === 2) { const { q, st } = s2.debug(); cur = st.fini ? 4 : q.phases[st.i].type === 'choix' ? 2 : 3; }
+      if (etape === 2) { const { q, st } = s2.debug(); cur = st.fini ? (st.palier ? 4 : st.ligne >= q.lignes.length ? 6 : 5) : q.phases[st.i].type === 'choix' ? 2 : 3; }
       ctx.tools.querySelectorAll('.etapes li').forEach((li, i) => {
         li.classList.toggle('on', i + 1 === cur);
         li.classList.toggle('fait', i + 1 < cur);
@@ -2661,6 +2776,7 @@ function creerOnglet(cfg) {
       majEtapes();
       if (s1.estFini()) passer('');           // rien à reconnaître : on passe directement aux dérivées
     }
+    ctx.majEtapes = majEtapes;
     // étape 1 réussie : on passe aux dérivées
     function passer(msg) {
       s2.charger(src, comp);
@@ -2680,7 +2796,7 @@ function creerOnglet(cfg) {
       },
       hint() { return (etape === 1 ? s1 : s2).hint(); },
       edited() { (etape === 1 ? s1 : s2).edited(); },
-      // correction : les quatre étapes à la suite
+      // correction : toutes les étapes à la suite
       solve() {
         const a = s1.solve();
         s2.charger(src, comp, true);                  // reconstruit l'étape 2 sans toucher au reste
@@ -2729,31 +2845,31 @@ register({ id: 'somme', title: 'Sommes et différences', short: 'Sommes',
   accent: '#007C74', bg: '#EAF5F3',
   levels: [['', 'xⁿ, kx, constantes'], ['', 'avec 1/x et √x'], ['', 'termes déguisés (3/x², x/4…)']],
   newLabel: () => null,
-  consigne: () => 'Une somme se dérive <b>terme par terme</b>. Choisis la dérivée de chaque terme, puis suis la simplification.',
-  create: creerOnglet({ genre: 'somme', comp: false, formule: { sansOp: ['somme'] } })
+  consigne: () => 'Une somme se dérive <b>terme par terme</b>. Choisis la dérivée de chaque terme, puis simplifie ligne par ligne.',
+  create: creerOnglet({ genre: 'somme', comp: false })
 });
 
 register({ id: 'prodquot', title: 'Produits et quotients', short: 'Produits et quotients',
   accent: '#A00058', bg: '#F9EDF3',
   levels: [['', 'produits de binômes'], ['', 'quotients de binômes'], ['', 'polynômes plus longs, avec √x']],
   newLabel: () => null,
-  consigne: () => 'Nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, <b>remplis la formule</b>, puis suis la simplification.',
-  create: creerOnglet({ genre: 'prodquot', comp: false, formule: { sansOp: ['produit', 'quotient'] } })
+  consigne: () => 'Nomme les morceaux <i>f</i> et <i>g</i>, choisis leurs dérivées, <b>remplis la formule</b>, puis simplifie ligne par ligne.',
+  create: creerOnglet({ genre: 'prodquot', comp: false })
 });
 
 register({ id: 'composee', title: 'Composées', short: 'Composées',
   accent: '#EC6708', bg: '#FDF1E7',
   levels: [['', '(ax + b)ⁿ'], ['', '√u'], ['', '1/u, k/uⁿ, u du 2e degré']],
   newLabel: () => null,
-  consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. Nomme <i>u</i>, choisis sa dérivée <i>u</i>′, <b>remplis la formule</b>, puis suis la simplification.',
-  create: creerOnglet({ genre: 'composee', comp: true, formule: { sansOp: ['kf', 'puissance', 'racine', 'inverse'] } })
+  consigne: () => 'Une expression est « emboîtée » dans une puissance, une racine ou un dénominateur. Nomme <i>u</i>, choisis sa dérivée <i>u</i>′, <b>remplis la formule</b>, puis simplifie ligne par ligne.',
+  create: creerOnglet({ genre: 'composee', comp: true })
 });
 
 register({ id: 'defi', title: 'Défi', short: 'Défi',
   accent: '#3B5C76', bg: '#EEF1F4',
   levels: [['', 'formules emboîtées']],
   newLabel: () => null,
-  consigne: () => 'Ici, plusieurs formules s’emboîtent. <b>Choisis d’abord la formule à appliquer en premier</b>, puis continue morceau par morceau.',
+  consigne: () => 'Ici, plusieurs formules s’emboîtent : nomme les morceaux, du plus grand au plus petit, puis continue morceau par morceau.',
   create: creerOnglet({ genre: 'defi', comp: true })
 });
 
@@ -2772,7 +2888,7 @@ register({ id: 'cours', title: 'Exercices du cours', short: 'Exercices du cours'
   levels: [['', 'banque A (p. 11)'], ['', 'banques A et B (p. 11 et 17)'], ['', 'banques A et B (p. 12 et 17)']],
   newLabel: () => null, nextLabel: () => '↻ Exercice suivant',
   scoreVide: 'Les numéros réussis passent en vert.',
-  consigne: lv => `Les exercices de niveau ${lv} des banques du cours, dans l’ordre. <b>Choisis un numéro</b> au-dessus de la fonction (celui de ton cahier), puis suis le déroulé : formule, dérivées, remplir, simplifier.`,
+  consigne: lv => `Les exercices de niveau ${lv} des banques du cours, dans l’ordre. <b>Choisis un numéro</b> au-dessus de la fonction (celui de ton cahier), puis suis le déroulé : morceaux, dérivées, remplir, dérivée brute, simplifier.`,
   create: creerOnglet({ cours: true })
 });
 
