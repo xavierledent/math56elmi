@@ -428,6 +428,7 @@ body.corrige #bCheck, body.corrige #bHint, body.corrige #bSolve, body.corrige .s
 .trou.plein { border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: #fff; }
 .trou.attend, .trou.survol { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, #fff); }
 .trou.faux { border: .06em solid var(--ko); background: var(--ko-bg); }
+.trou.bon { border: .06em solid var(--ok); background: var(--ok-bg); cursor: default; }
 .lignes-sol { flex: 1 1 auto; min-height: 0; overflow-y: auto; width: 100%; max-width: 820px; display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; }
 .ls { margin: 0; padding: 4px 12px; font-size: 22px; line-height: 1.7; border-radius: 10px; }
 .ls.new { background: color-mix(in srgb, var(--accent) 10%, #fff); animation: apparait .45s ease both; }
@@ -437,11 +438,17 @@ body.corrige #bCheck, body.corrige #bHint, body.corrige #bSolve, body.corrige .s
 .question:has(.choix-ligne), .question:has(.tuiles) { display: block; text-align: left; font-size: 16px; padding: 10px 12px 12px; }
 .choix-ligne { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 5px 6px; border-radius: 10px; margin-bottom: 4px; }
 .choix-ligne.faux { background: var(--ko-bg); }
+/* dérivée juste après « Vérifier » : gardée en vert et verrouillée */
+.choix-ligne.bon { background: var(--ok-bg); }
+.choix-ligne.bon .opt { cursor: default; }
+.choix-ligne.bon .opt:not(.on) { opacity: .35; }
+.choix-ligne.bon .opt.on { border-color: var(--ok); background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+.choix-ligne .verrou { color: var(--ok); font: 700 18px var(--ui); margin-left: 2px; }
 .choix-ligne .eti { font-size: 17px; min-width: 92px; }
 .choix-ligne .pour { color: var(--ink2); font-size: .9em; }
 .opts { display: flex; gap: 5px; flex-wrap: wrap; }
 .opt { border: 1.5px solid var(--line); background: #fff; border-radius: 9px; padding: 3px 9px; cursor: pointer; font-size: 17px; color: var(--ink); min-height: 38px; }
-.opt:hover { border-color: var(--accent); }
+.opt:not(:disabled):hover { border-color: var(--accent); }
 .opt.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, #fff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
 .tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .tuile { display: flex; align-items: center; gap: 8px; border: 2px solid var(--c); background: #fff; border-radius: 10px; padding: 4px 8px; cursor: grab; touch-action: none; color: var(--ink); font-size: 18px; min-height: 44px; text-align: left; }
@@ -2454,7 +2461,7 @@ function creerRemplir(ctx) {
 
     }
     function reset() {
-      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false, palier: false, fauxL: new Set(), pisteL: '', animLigne: -1 };
+      st = { i: 0, choix: {}, cases: {}, sel: null, faux: new Set(), fauxChoix: new Set(), bonChoix: new Set(), bonCases: new Set(), valeur: {}, fini: false, ligne: 0, trouves: [], ferme: false, palier: false, fauxL: new Set(), pisteL: '', animLigne: -1 };
       sauterAuto();
       dessiner();
     }
@@ -2484,7 +2491,7 @@ function creerRemplir(ctx) {
     function avancer() {
       const ph = phase();
       if (ph.type === 'placer' || ph.p.auto) terminerPlan(ph.p);
-      st.i++; st.sel = null; st.faux.clear(); st.fauxChoix.clear();
+      st.i++; st.sel = null; st.faux.clear(); st.fauxChoix.clear(); st.bonChoix.clear(); st.bonCases.clear();
       sauterAuto();
     }
 
@@ -2521,7 +2528,7 @@ function creerRemplir(ctx) {
         : `<b>${F0.nom}</b> <span class="m">(${F0.f})′ = ${F0.d}</span>${p.op === 'puissance' ? ` <span class="ici">(ici <i>n</i> = ${numStr(p.T.d.n)})</span>` : ''}`;
       // formule à cases
       const t = remplie(p, st.fini);
-      casesDe(t).forEach((h, i) => { if (st.faux.has(i) && !st.fini) h.cls = 'faux'; if (!h.v && st.sel) h.cls = 'attend'; h.id = h.id + ':' + i; });
+      casesDe(t).forEach((h, i) => { if (st.faux.has(i) && !st.fini) h.cls = 'faux'; else if (st.bonCases.has(i) && !st.fini) h.cls = 'bon'; if (!h.v && st.sel) h.cls = 'attend'; h.id = h.id + ':' + i; });
       const prime = sd ? (sd.s.id[0] === 't' ? '(terme)′' : NOM_TUILE[sd.s.id + 'p'] || NOM_TUILE[sd.s.id]) : '<i>f</i>′(<i>x</i>)';
       $z('.modele').innerHTML = (st.fini ? '<span class="brute">Dérivée brute ✓</span>' : '') + `<span class="m"><span class="prime">${prime} =</span> ${E.html(t)}</span>`;
       $z('.modele').classList.toggle('fini', st.fini);
@@ -2717,10 +2724,11 @@ function creerRemplir(ctx) {
       const ph = phase(), p = ph.p;
       if (ph.type === 'choix') {
         ctx.q.innerHTML = '<p class="qtitre">Choisis la dérivée de chaque morceau :</p>' + p.choix.map((c, i) =>
-          `<div class="choix-ligne${st.fauxChoix.has(c.id) ? ' faux' : ''}"><span class="m eti">${c.etiquette.length < 4 ? `<span class="qui r-${c.id[0]}">${c.etiquette}</span> <span class="pour">(${E.html(c.morceau)})′</span>` : c.etiquette} =</span><span class="opts">`
-          + c.props.map((o, j) => `<button class="opt${st.choix[c.id] === j ? ' on' : ''}" data-c="${i}" data-o="${j}"><span class="m">${E.html(o.node)}</span></button>`).join('') + '</span></div>').join('');
+          `<div class="choix-ligne${st.fauxChoix.has(c.id) ? ' faux' : st.bonChoix.has(c.id) ? ' bon' : ''}"><span class="m eti">${c.etiquette.length < 4 ? `<span class="qui r-${c.id[0]}">${c.etiquette}</span> <span class="pour">(${E.html(c.morceau)})′</span>` : c.etiquette} =</span><span class="opts">`
+          + c.props.map((o, j) => `<button class="opt${st.choix[c.id] === j ? ' on' : ''}" data-c="${i}" data-o="${j}"${st.bonChoix.has(c.id) ? ' disabled' : ''}><span class="m">${E.html(o.node)}</span></button>`).join('')
+          + (st.bonChoix.has(c.id) ? '<span class="verrou" title="Juste : cette dérivée est gardée">✓</span>' : '') + '</span></div>').join('');
         ctx.q.querySelectorAll('.opt').forEach(b => b.onclick = () => {
-          const c = p.choix[+b.dataset.c]; st.choix[c.id] = +b.dataset.o; st.fauxChoix.delete(c.id); ctx.changed(); dessinerReponse();
+          const c = p.choix[+b.dataset.c]; if (st.bonChoix.has(c.id)) return; st.choix[c.id] = +b.dataset.o; st.fauxChoix.delete(c.id); ctx.changed(); dessinerReponse();
         });
         return;
       }
@@ -2731,7 +2739,7 @@ function creerRemplir(ctx) {
         + '</div><p class="qhint">Une tuile peut servir deux fois (<i>g</i> et <i>g</i><sup>2</sup>). Clique sur une case remplie pour la vider.</p>';
       ctx.q.querySelectorAll('.tuile').forEach(b => {
         const id = b.dataset.t;
-        glisserVers(b, `<span class="tuile r-${COUL_TUILE[id]}"><span class="nom">${NOM_TUILE[id]}</span></span>`, '.modele .trou',
+        glisserVers(b, `<span class="tuile r-${COUL_TUILE[id]}"><span class="nom">${NOM_TUILE[id]}</span></span>`, '.modele .trou:not(.bon)',
           c => poserTuile(c, id), () => { st.sel = st.sel === id ? null : id; dessiner(); });
       });
     }
@@ -2739,12 +2747,14 @@ function creerRemplir(ctx) {
       const ph = phase();
       if (st.fini || !ph || ph.type !== 'placer' || App.sol) return;
       const i = +el.dataset.h.split(':')[1];
+      if (st.bonCases.has(i)) return;            // case juste, verrouillée après « Vérifier »
       if (st.sel) poserTuile(el, st.sel);
       else { delete st.cases[cle(ph.p, casesDe(ph.p.tmpl)[i], i)]; st.faux.delete(i); ctx.changed(); dessiner(); }
     }
     function poserTuile(el, id) {
       const ph = phase(); if (st.fini || !ph || ph.type !== 'placer') return;
       const i = +el.dataset.h.split(':')[1];
+      if (st.bonCases.has(i)) return;
       st.cases[cle(ph.p, casesDe(ph.p.tmpl)[i], i)] = id;
       st.faux.delete(i); st.sel = null;
       ctx.changed(); dessiner();
@@ -2767,16 +2777,23 @@ function creerRemplir(ctx) {
       if (ph.type === 'choix') {
         if (p.choix.some(c => st.choix[c.id] === undefined)) return { ok: false, empty: true, msg: 'Choisis une dérivée sur chaque ligne.' };
         const faux = p.choix.filter(c => c.props[st.choix[c.id]].faute);
-        if (faux.length) { faux.forEach(c => st.fauxChoix.add(c.id)); dessinerReponse(); return { ok: false, msg: PISTES_FAUTES[faux[0].props[st.choix[faux[0].id]].faute] }; }
+        // les dérivées justes sont gardées (en vert, verrouillées) : l'élève ne recommence que les fausses
+        p.choix.forEach(c => { if (!c.props[st.choix[c.id]].faute) st.bonChoix.add(c.id); });
+        if (faux.length) {
+          faux.forEach(c => st.fauxChoix.add(c.id)); dessinerReponse();
+          const garde = p.choix.length > faux.length ? ' Les dérivées justes sont gardées (en vert) : change seulement ' + (faux.length > 1 ? 'les autres.' : 'l’autre.') : '';
+          return { ok: false, msg: PISTES_FAUTES[faux[0].props[st.choix[faux[0].id]].faute] + garde };
+        }
         p.choix.forEach(c => { st.valeur[p.T.id + ':' + c.id] = c.props.find(o => !o.faute).node; });
         msg = p.auto ? 'Les dérivées sont justes.' : 'Les dérivées sont justes. Glisse maintenant les tuiles dans les cases.';
       } else {
         const cs = casesDe(p.tmpl);
         if (cs.some((h, i) => !st.cases[cle(p, h, i)])) return { ok: false, empty: true, msg: 'Remplis toutes les cases de la formule.' };
         if (!memeValeur(remplie(p, false), p.deriv)) {
-          cs.forEach((h, i) => { if (st.cases[cle(p, h, i)] !== h.id) st.faux.add(i); });
+          // les cases justes sont gardées (en vert, verrouillées) : l'élève ne refait que les fausses
+          cs.forEach((h, i) => { if (st.cases[cle(p, h, i)] !== h.id) st.faux.add(i); else st.bonCases.add(i); });
           dessiner();
-          return { ok: false, msg: pistePlacer(p) };
+          return { ok: false, msg: pistePlacer(p) + (st.bonCases.size ? ' Les cases justes sont gardées (en vert) : change seulement les autres.' : '') };
         }
         msg = 'La formule est bien remplie.';
       }
