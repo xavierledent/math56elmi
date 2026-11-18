@@ -539,18 +539,39 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .question:has(.saisie) { display: block; text-align: left; font-size: 18px; padding: 12px 12px 10px; }
 .saisie .champ { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
 .saisie .champ .nom { flex: none; width: 4.4em; font-size: 19px; text-align: right; }
+/* champ mathématique (editeur.js) : fractions, exposants et racines comme sur papier */
 .saisie .ecrit {
-  flex: 1; min-width: 0; font: 500 19px var(--ui); color: var(--ink); padding: 7px 10px; border-radius: 9px;
-  border: 2px dashed var(--accent); background: #fff;
+  flex: 1; min-width: 0; min-height: 46px; padding: 4px 10px; border-radius: 9px; border: 2px dashed var(--accent); background: #fff;
+  font-size: 22px; line-height: 1.25; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; cursor: text;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
 }
-.saisie .ecrit:focus { outline: none; border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
-.saisie .ecrit::placeholder { color: var(--ink3); font-weight: 400; font-size: 15px; }
-/* aperçu sous chaque case : seulement sur écran étroit (sinon, le tableau de droite le montre en grand) */
-.saisie .apercu { display: none; margin: -2px 0 8px calc(4.4em + 8px); font-size: 18px; overflow-x: auto; }
-.saisie .apercu.erreur, .saisie .apercu:has(.pb) { display: block; }
-.saisie .apercu .pb { font: 500 13px/1.4 var(--ui); color: var(--ko); white-space: normal; }
-.saisie .astuce { margin: 0 0 6px; font: 500 12.5px/1.4 var(--ui); color: #8a6a0e; }
-.saisie .astuce:empty { display: none; }
+.saisie .ecrit.ed-focus { outline: none; border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.saisie .ecrit:not(.ed-plein):not(.ed-focus)::before { content: attr(data-vide); font: 400 15px var(--ui); color: var(--ink3); }
+.ed-row { display: inline-flex; align-items: center; white-space: nowrap; min-height: 1.2em; }
+.ed-racine { padding: 2px 0; }
+.ed-c, .ed-var { padding: 0 .02em; }
+.ed-var { font-style: italic; }
+.ed-op { margin: 0 .22em; }
+.ed-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 .12em; font-size: .9em; }
+.ed-frac > .ed-n { padding: 0 .15em .06em; border-bottom: .07em solid currentColor; justify-content: center; min-width: 100%; }
+.ed-frac > .ed-d { padding: .06em .15em 0; justify-content: center; }
+.ed-pow { display: inline-flex; align-self: flex-start; font-size: .68em; margin: -.1em 0 0 .04em; }
+.ed-sqrt { display: inline-flex; align-items: stretch; margin: 0 .06em; }
+.ed-rad { font-size: 1.1em; line-height: 1; align-self: center; margin-right: -.04em; }
+.ed-sqrt > .ed-a { border-top: .07em solid currentColor; padding: .08em .1em 0; }
+.ed-vide { min-width: .8em; min-height: 1em; border: 1px dashed var(--ink3); border-radius: 3px; background: color-mix(in srgb, var(--accent) 6%, #fff); }
+.ed-cur { display: none; width: 0; align-self: stretch; min-height: 1em; border-left: 2px solid var(--accent); margin: 0 -1px; }
+.ed-focus .ed-cur { display: inline-block; animation: ed-clign 1.05s steps(1) infinite; }
+.ed-vide > .ed-cur { margin-left: .3em; }
+@keyframes ed-clign { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ed-focus .ed-cur { animation: none; } }
+/* sous chaque champ : seulement ce qui ne va pas dans l'écriture */
+.saisie .apercu { margin: -2px 0 8px calc(4.4em + 8px); }
+.saisie .apercu:empty { display: none; }
+.saisie .apercu .pb { font: 500 13px/1.4 var(--ui); color: var(--ko); }
+.saisie .astuce { margin: 0 0 6px; font: 500 12.5px/1.4 var(--ui); color: var(--ink2); }
+@media (pointer: coarse) { .saisie .astuce { display: none; } }
+.touche .boite { display: inline-block; width: .62em; height: .78em; border: 1.5px solid currentColor; border-radius: 2px; vertical-align: -.08em; }
 .clavier { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 4px; }
 .touche {
   min-height: 40px; padding: 0 2px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff; color: var(--ink);
@@ -588,7 +609,6 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .zone-verif .v-aide:empty { display: none; }
 
 @media (max-width: 960px) {
-  .saisie .apercu { display: block; }
   .zone-verif { min-height: 160px; padding-top: 16px; }
 }
 @media (max-width: 560px) {
@@ -3101,6 +3121,285 @@ function exercicesCours(ctx, niv, charger) {
 
 'use strict';
 /* =====================================================================
+   Champ mathématique « comme sur Desmos » (outil « Vérifier une dérivée », 19/11/2026).
+   L'élève voit ce qu'il écrit : vraie fraction (barre), exposant en haut, racine.
+     - « / » ou la touche fraction : ce qui précède devient le numérateur, le curseur passe en bas ;
+     - « ^ » : une case d'exposant (un nombre entier : tout autre signe en fait sortir) ; « ² » : au carré ;
+       « √ » ou « sqrt » : une racine ;
+     - flèches pour entrer et sortir des cases (haut / bas : numérateur ↔ dénominateur) ;
+     - ⌫ au début d'une case vide la défait.
+   Le contenu se lit comme une écriture du moteur (texte()), avec des parenthèses autour de chaque
+   fraction, exposant et racine : il n'y a plus d'ambiguïté du genre « 1/2x ».
+   Structure : une ligne = { items: [], parent } ; un élément = caractère { t: 'c', c }, ou
+   { t: 'frac', n, d }, { t: 'pow', e }, { t: 'sqrt', a } (n, d, e, a : des lignes).
+   ===================================================================== */
+const ED_CHIFFRE = /^[0-9,]$/;
+function creerEditeur(el, opt = {}) {
+  const ligne = parent => ({ items: [], parent });
+  const racine = ligne(null);
+  let cur = { row: racine, i: 0 };
+  const pos = new WeakMap();                                   // élément affiché → { row, i }
+  el.classList.add('ed');
+  el.tabIndex = 0;
+  el.setAttribute('role', 'textbox');
+  if (opt.label) el.setAttribute('aria-label', opt.label);
+
+  /* ---------- structure ---------- */
+  const lignesDe = it => it.t === 'frac' ? [it.n, it.d] : it.t === 'pow' ? [it.e] : it.t === 'sqrt' ? [it.a] : [];
+  const struct = it => it.t !== 'c';
+  const car = c => ({ t: 'c', c });
+  function inserer(it) {
+    it.row = cur.row;
+    lignesDe(it).forEach(r => { r.parent = it; });
+    cur.row.items.splice(cur.i, 0, it);
+    cur.i++;
+  }
+  const index = it => it.row.items.indexOf(it);
+  // début de l'« opérande » juste avant le curseur (ce qui deviendra le numérateur d'une fraction)
+  function debutOperande(row, i) {
+    let j = i;
+    while (j > 0) {
+      const it = row.items[j - 1];
+      if (it.t === 'c' && it.c === ')') {                     // un groupe entre parenthèses : jusqu'à sa « ( »
+        let p = 0, k = j - 1;
+        for (; k >= 0; k--) { const c = row.items[k]; if (c.t === 'c' && c.c === ')') p++; if (c.t === 'c' && c.c === '(' && --p === 0) break; }
+        j = Math.max(k, 0);
+        continue;
+      }
+      if (struct(it) || ED_CHIFFRE.test(it.c) || /^[a-z]$/i.test(it.c)) { j--; continue; }
+      break;
+    }
+    return j;
+  }
+  // « (x + 1) » qui remplit toute une case de fraction : les parenthèses ne servent plus (la barre les remplace)
+  function sansParentheses(r) {
+    const it = r.items;
+    if (it.length < 3 || it[0].c !== '(' || it.at(-1).c !== ')') return false;
+    let p = 0;
+    for (let k = 0; k < it.length; k++) { if (it[k].c === '(') p++; if (it[k].c === ')' && --p === 0 && k < it.length - 1) return false; }
+    const garde = cur.row === r ? Math.max(0, Math.min(cur.i - 1, it.length - 2)) : null;
+    r.items = it.slice(1, -1);
+    if (garde !== null) cur = { row: r, i: garde };
+    return true;
+  }
+  const nettoyer = r => { if (r.parent && r.parent.t === 'frac') sansParentheses(r); };
+  function toutNettoyer(r = racine) { r.items.forEach(it => lignesDe(it).forEach(x => { toutNettoyer(x); nettoyer(x); })); }
+  function fraction() {
+    const row = cur.row, j = debutOperande(row, cur.i);
+    let haut = row.items.splice(j, cur.i - j);
+    // « (x + 1) / … » : les parenthèses du numérateur ne servent plus
+    if (haut.length > 2 && haut[0].c === '(' && haut[haut.length - 1].c === ')') {
+      let p = 0, k = 0; for (; k < haut.length; k++) { if (haut[k].c === '(') p++; if (haut[k].c === ')' && --p === 0) break; }
+      if (k === haut.length - 1) haut = haut.slice(1, -1);
+    }
+    const fr = { t: 'frac', n: ligne(null), d: ligne(null) };
+    cur.i = j;
+    inserer(fr);
+    haut.forEach(it => { it.row = fr.n; });
+    fr.n.items = haut;
+    cur = haut.length ? { row: fr.d, i: 0 } : { row: fr.n, i: 0 };
+  }
+  function puissance(texte) {
+    const p = { t: 'pow', e: ligne(null) };
+    inserer(p);
+    if (texte) { [...texte].forEach(c => { const it = car(c); it.row = p.e; p.e.items.push(it); }); }
+    else cur = { row: p.e, i: 0 };
+  }
+  function racineCarree() { const r = { t: 'sqrt', a: ligne(null) }; inserer(r); cur = { row: r.a, i: 0 }; }
+
+  /* ---------- déplacements ---------- */
+  function droite() {
+    const { row, i } = cur;
+    if (i < row.items.length) { const it = row.items[i]; cur = struct(it) ? { row: lignesDe(it)[0], i: 0 } : { row, i: i + 1 }; return; }
+    const s = row.parent; if (!s) return;
+    nettoyer(row);
+    if (s.t === 'frac' && row === s.n) cur = { row: s.d, i: 0 };
+    else cur = { row: s.row, i: index(s) + 1 };
+  }
+  function gauche() {
+    const { row, i } = cur;
+    if (i > 0) { const it = row.items[i - 1]; if (struct(it)) { const r = lignesDe(it).at(-1); cur = { row: r, i: r.items.length }; } else cur = { row, i: i - 1 }; return; }
+    const s = row.parent; if (!s) return;
+    if (s.t === 'frac' && row === s.d) cur = { row: s.n, i: s.n.items.length };
+    else cur = { row: s.row, i: index(s) };
+  }
+  function vertical(bas) {
+    for (let r = cur.row; r.parent; r = r.parent.row) {
+      const s = r.parent;
+      if (s.t === 'frac' && (bas ? r === s.n : r === s.d)) { nettoyer(r); const c = bas ? s.d : s.n; cur = { row: c, i: c.items.length }; return; }     // à la fin de l'autre case
+    }
+  }
+  function effacer() {
+    const { row, i } = cur;
+    if (i > 0) {
+      const it = row.items[i - 1];
+      if (!struct(it) || lignesDe(it).every(r => !r.items.length)) { row.items.splice(i - 1, 1); cur.i--; }
+      else { const r = lignesDe(it).at(-1); cur = { row: r, i: r.items.length }; }    // on entre dans la case
+      return;
+    }
+    const s = row.parent; if (!s) return;
+    if (s.t === 'frac' && row === s.d && s.d.items.length) { cur = { row: s.n, i: s.n.items.length }; return; }
+    if (s.t === 'frac' && row === s.n && s.d.items.length) { cur = { row: s.row, i: index(s) }; return; }
+    // on défait la case : son contenu reprend sa place dans la ligne
+    const contenu = lignesDe(s).flatMap(r => r.items), k = index(s);
+    contenu.forEach(it => { it.row = s.row; });
+    s.row.items.splice(k, 1, ...contenu);
+    cur = { row: s.row, i: k };
+  }
+
+  /* ---------- lecture ---------- */
+  const SER = { '−': '-', '×': '*', ',': '.' };
+  // une case vide s'écrit « □ » : la lecture dit alors qu'il reste une case à remplir
+  const serRow = r => r.items.length ? r.items.map(serIt).join('') : '□';
+  const serIt = it => it.t === 'c' ? (SER[it.c] || it.c)
+    : it.t === 'frac' ? '((' + serRow(it.n) + ')/(' + serRow(it.d) + '))'
+    : it.t === 'pow' ? '^(' + serRow(it.e) + ')' : 'sqrt(' + serRow(it.a) + ')';
+  const texte = () => racine.items.length ? racine.items.map(serIt).join('') : '';
+
+  // écriture du moteur (« (x+1)/(2x) ») → contenu du champ, en passant par l'arbre du moteur
+  function depuis(a) {
+    const C = s => [...s].map(car), paren = items => [car('('), ...items, car(')')];
+    const nombre = v => v.d === 1 ? C(String(Math.abs(v.n))) : [mk('frac', C(String(Math.abs(v.n))), C(String(v.d)))];
+    const atome = b => b.t === 'x' || b.t === 'r' || (b.t === 'n' && b.v.n >= 0 && b.v.d === 1);
+    function mk(t, x, y) {
+      const s = t === 'frac' ? { t, n: ligne(null), d: ligne(null) } : t === 'pow' ? { t, e: ligne(null) } : { t, a: ligne(null) };
+      lignesDe(s).forEach((r, k) => { r.items = [x, y][k]; r.items.forEach(it => { it.row = r; }); r.parent = s; });
+      return s;
+    }
+    function go(b) {
+      switch (b.t) {
+        case 'n': return (b.v.n < 0 ? [car('−')] : []).concat(nombre(b.v));
+        case 'x': return [car('x')];
+        case 's': return b.a.flatMap((t, k) => {
+          if (t.t === 'g') return [car('−'), ...(t.a.t === 's' ? paren(go(t.a)) : go(t.a))];
+          if (t.t === 'n' && t.v.n < 0) return go(t);
+          return k ? [car('+'), ...go(t)] : go(t);
+        });
+        case 'p': return b.a.flatMap((f, k) => {
+          const it = ['s', 'g'].includes(f.t) || (f.t === 'n' && f.v.n < 0 && k) ? paren(go(f)) : go(f);
+          return k && it[0].t === 'c' && ED_CHIFFRE.test(it[0].c) ? [car('×'), ...it] : it;
+        });
+        case 'q': return [mk('frac', go(b.n), go(b.d))];
+        case 'w': return [...(atome(b.b) ? go(b.b) : paren(go(b.b))), mk('pow', C((b.e < 0 ? '−' : '') + Math.abs(b.e)))];
+        case 'r': return [mk('sqrt', go(b.a))];
+        case 'g': return [car('−'), ...(b.a.t === 's' ? paren(go(b.a)) : go(b.a))];
+      }
+      return [];
+    }
+    return go(a);
+  }
+  function definir(s) {
+    racine.items = [];
+    if (s) {
+      try { racine.items = depuis(E.parse(normaliser(s))); } catch (e) { racine.items = [...String(s)].map(car); }
+      racine.items.forEach(it => { it.row = racine; });
+    }
+    cur = { row: racine, i: racine.items.length };
+    dessiner();
+  }
+
+  /* ---------- affichage ---------- */
+  const OPS = { '+': '+', '−': '−', '×': '×' };
+  function rendRow(r, cls) {
+    const span = document.createElement('span');
+    span.className = 'ed-row' + (cls ? ' ' + cls : '');
+    pos.set(span, { row: r, i: r.items.length });
+    const curseur = () => { const c = document.createElement('span'); c.className = 'ed-cur'; span.appendChild(c); };
+    r.items.forEach((it, i) => {
+      if (cur.row === r && cur.i === i) curseur();
+      const e = rendIt(it);
+      pos.set(e, { row: r, i });
+      span.appendChild(e);
+    });
+    if (cur.row === r && cur.i === r.items.length) curseur();
+    if (!r.items.length && r !== racine) span.classList.add('ed-vide');
+    return span;
+  }
+  function rendIt(it) {
+    const e = document.createElement('span');
+    e.dataset.it = '';
+    if (it.t === 'c') {
+      if (OPS[it.c]) { e.className = 'ed-op'; e.textContent = OPS[it.c]; }
+      else if (/^[a-z]$/i.test(it.c)) { e.className = 'ed-var'; e.textContent = it.c; }
+      else { e.className = 'ed-c'; e.textContent = it.c; }
+      return e;
+    }
+    e.className = 'ed-' + it.t;
+    if (it.t === 'frac') { e.append(rendRow(it.n, 'ed-n'), rendRow(it.d, 'ed-d')); }
+    else if (it.t === 'pow') e.append(rendRow(it.e, 'ed-e'));
+    else { const s = document.createElement('span'); s.className = 'ed-rad'; s.textContent = '√'; e.append(s, rendRow(it.a, 'ed-a')); }
+    return e;
+  }
+  function dessiner() {
+    el.replaceChildren(rendRow(racine, 'ed-racine'));
+    el.classList.toggle('ed-plein', racine.items.length > 0);
+    const c = el.querySelector('.ed-cur');
+    if (c && document.activeElement === el) c.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  const change = () => { dessiner(); el.dispatchEvent(new Event('input', { bubbles: true })); };
+
+  /* ---------- commandes (clavier de l'écran et clavier physique) ---------- */
+  function commande(cmd) {
+    // dans un exposant, seulement un nombre entier (chapitre 2) : tout autre signe fait sortir de l'exposant
+    // (« x^2+1 » donne x² + 1, comme sur papier) ; un « − » en tête reste dedans (x⁻²)
+    const p = cur.row.parent;
+    if (p && p.t === 'pow' && !/^(gauche|droite|haut|bas|debut|fin|effacer|vider)$/.test(cmd)
+      && !/^[0-9]$/.test(cmd) && !(cmd === '−' && cur.i === 0)) cur = { row: p.row, i: index(p) + 1 };
+    switch (cmd) {
+      case 'gauche': gauche(); dessiner(); return;
+      case 'droite': droite(); dessiner(); return;
+      case 'haut': vertical(false); dessiner(); return;
+      case 'bas': vertical(true); dessiner(); return;
+      case 'debut': cur = { row: racine, i: 0 }; dessiner(); return;
+      case 'fin': cur = { row: racine, i: racine.items.length }; dessiner(); return;
+      case 'effacer': effacer(); break;
+      case 'vider': racine.items = []; cur = { row: racine, i: 0 }; break;
+      case 'frac': fraction(); break;
+      case 'pow': puissance(''); break;
+      case 'carre': puissance('2'); break;
+      case 'x2': inserer(car('x')); puissance('2'); break;
+      case 'sqrt': racineCarree(); break;
+      default: inserer(car(cmd));
+    }
+    change();
+  }
+  const TOUCHE = { '-': '−', '*': '×', '.': ',', 'X': 'x', '÷': 'frac', '/': 'frac', ':': 'frac', '^': 'pow', '²': 'carre', '√': 'sqrt' };
+  el.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key;
+    const nav = { ArrowLeft: 'gauche', ArrowRight: 'droite', ArrowUp: 'haut', ArrowDown: 'bas', Home: 'debut', End: 'fin', Backspace: 'effacer' }[k];
+    if (nav) { e.preventDefault(); commande(nav); return; }
+    if (k === 'Delete') { e.preventDefault(); if (cur.i < cur.row.items.length || cur.row.parent) { droite(); effacer(); change(); } return; }
+    if (k.length !== 1 || k === ' ') return;
+    e.preventDefault();
+    const c = TOUCHE[k] || k;
+    if (c === 't') {                                              // « sqrt » tapé au clavier : une racine
+      const it = cur.row.items, j = cur.i;
+      if (j >= 3 && it.slice(j - 3, j).map(x => x.c).join('') === 'sqr') { it.splice(j - 3, 3); cur.i -= 3; commande('sqrt'); return; }
+    }
+    if (/^[0-9a-z+−×(),]$/i.test(c) || ['frac', 'pow', 'carre', 'sqrt'].includes(c)) commande(c.length === 1 ? c.toLowerCase() : c);
+  });
+  // un clic place le curseur (avant ou après le caractère, selon la moitié cliquée)
+  el.addEventListener('pointerdown', e => {
+    const cible = e.target.closest('[data-it], .ed-row');
+    if (cible && el.contains(cible) && pos.has(cible)) {
+      const p = pos.get(cible);
+      if (cible.dataset.it !== undefined) {
+        const b = cible.getBoundingClientRect();
+        cur = { row: p.row, i: p.i + (e.clientX > b.left + b.width / 2 ? 1 : 0) };
+      } else cur = { row: p.row, i: p.row.items.length };
+    } else cur = { row: racine, i: racine.items.length };
+    setTimeout(() => { el.focus(); dessiner(); }, 0);
+  });
+  el.addEventListener('focus', () => { el.classList.add('ed-focus'); dessiner(); });
+  el.addEventListener('blur', () => { el.classList.remove('ed-focus'); toutNettoyer(); dessiner(); });
+  dessiner();
+
+  return { texte, definir, commande, focus: () => el.focus(), vide: () => !racine.items.length };
+}
+
+'use strict';
+/* =====================================================================
    Outil « Vérifier une dérivée » (5e-6e TQ, chapitre 2, 18/11/2026).
    L'élève écrit la fonction de son exercice (clavier à l'écran ou clavier de l'ordinateur) :
      - « ✓ Vérifier » : il écrit aussi sa dérivée ; l'outil dit si elle est juste, même écrite
@@ -3137,6 +3436,7 @@ function lireExpression(texte, quoi, lim = LIMITES.f) {
   if (!t) return { vide: true };
   const sans = t.replace(/sqrt/g, '');
   if (/sin|cos|tan|ln|log|exp/i.test(sans) || /e/.test(sans)) return { ok: false, msg: 'Les fonctions sin, cos, ln, exp… ne sont pas dans ce chapitre : l’outil connaît les nombres, <i>x</i>, + − × ÷, les puissances et la racine √.' };
+  if (t.includes('□')) return { ok: false, incomplet: true, msg: 'Une case est encore vide (fraction, exposant ou racine) : remplis-la, ou efface-la avec ⌫.' };
   const lettre = sans.match(/[a-wyz]/i);
   if (lettre) return { ok: false, msg: `La lettre « ${lettre[0]} » n’est pas comprise : écris ${quoi} avec la lettre <i>x</i> seulement.` };
   const bizarre = sans.replace(/[0-9x+\-*/^(). ]/g, '');
@@ -3146,12 +3446,12 @@ function lireExpression(texte, quoi, lim = LIMITES.f) {
     if (c === '(') prof++;
     if (c === ')' && --prof < 0) return { ok: false, msg: 'Une parenthèse « ) » est fermée sans avoir été ouverte.' };
   }
-  if (prof) return { ok: false, msg: prof === 1 ? 'Il manque une parenthèse fermante « ) ».' : `Il manque ${prof} parenthèses fermantes « ) ».` };
+  if (prof) return { ok: false, incomplet: true, msg: prof === 1 ? 'Il manque une parenthèse fermante « ) ».' : `Il manque ${prof} parenthèses fermantes « ) ».` };
   if (/\(\s*\)/.test(t)) return { ok: false, msg: 'Une parenthèse est vide : écris quelque chose dedans.' };
   if (/^[*/^]/.test(t)) return { ok: false, msg: `${quoi[0].toUpperCase() + quoi.slice(1)} commence par un signe : il manque quelque chose avant.` };
-  if (/[-+*/^]\s*$/.test(t)) return { ok: false, msg: `${quoi[0].toUpperCase() + quoi.slice(1)} se termine par un signe : il manque quelque chose après.` };
+  if (/[-+*/^]\s*$/.test(t)) return { ok: false, incomplet: true, msg: `${quoi[0].toUpperCase() + quoi.slice(1)} se termine par un signe : il manque quelque chose après.` };
   if (/[-+*/^]\s*[*/^)]|\(\s*[*/^]/.test(t)) return { ok: false, msg: 'Deux signes se suivent : il manque un nombre ou <i>x</i> entre les deux.' };
-  if (/\^\s*(?!-?\d)/.test(t) || /\^\s*-?\d+\.\d/.test(t)) return { ok: false, msg: 'Après « ^ », l’exposant doit être un nombre entier (comme <i>x</i><sup>3</sup>). Pour une racine, utilise √.' };
+  if (/\^\s*(?!-?\d)/.test(t) || /\^\s*-?\d+\.\d/.test(t)) return { ok: false, msg: 'L’exposant doit être un nombre entier (comme <i>x</i><sup>3</sup> ou <i>x</i><sup>−2</sup>). Pour une racine, utilise √.' };
   if ([...t.matchAll(/\^\s*-?(\d+)/g)].some(m => +m[1] > lim.expo)) return { ok: false, msg: `Cet exposant est trop grand pour l’outil (${lim.expo} au plus).` };
   if (t.length > lim.long) return { ok: false, msg: `${quoi[0].toUpperCase() + quoi.slice(1)} est trop longue pour l’outil.` };
   let a;
@@ -3165,7 +3465,8 @@ function memeFonction(a, ref, f) {
   const u = vals(a), v = vals(ref), w = f ? vals(f) : null;
   let n = 0;
   for (let k = 0; k < POINTS.length; k++) {
-    if (!Number.isFinite(v[k]) || (w && !Number.isFinite(w[k]))) continue;
+    // (valeurs énormes, comme (…)²⁰ : la précision des calculs ne permet plus de comparer, on passe ce point)
+    if (!Number.isFinite(v[k]) || Math.abs(v[k]) > 1e10 || (w && !Number.isFinite(w[k]))) continue;
     n++;
     if (!Number.isFinite(u[k]) || Math.abs(u[k] - v[k]) > 1e-8 * (1 + Math.abs(v[k]))) return false;
   }
@@ -3210,32 +3511,37 @@ function pisteErreur(d, a, fin) {
 }
 
 /* ---------- clavier à l'écran ---------- */
-// [libellé, texte inséré, recul du curseur après insertion, classe]
+// [libellé, commande de l'éditeur (par défaut : le caractère), classe, titre]
 const TOUCHES = [
   ['7'], ['8'], ['9'], ['+'], ['−'], ['('], [')'],
-  ['4'], ['5'], ['6'], ['×'], ['÷'], ['<i>x</i>', 'x', 0, 'var'], ['<i>x</i><sup>2</sup>', '²', 0, 'var'],
-  ['1'], ['2'], ['3'], ['0'], [','], ['<i>x</i><sup><i>n</i></sup>', '^', 0, 'var', 'exposant : x^3, x^−2…'], ['√', '√()', 1, 'var', 'racine carrée'],
-  ['<span class="fq"><span>▭</span><span>▭</span></span>', '()/()', 4, 'frac', 'fraction : (haut)/(bas)'],
-  ['◀', 'gauche', 0, 'nav', 'curseur à gauche'], ['▶', 'droite', 0, 'nav', 'curseur à droite'],
-  ['⌫', 'effacer', 0, 'nav large', 'effacer'], ['Tout effacer', 'vider', 0, 'nav large']
+  ['4'], ['5'], ['6'], ['×'], ['<span class="fq"><span>▭</span><span>▭</span></span>', 'frac', 'frac', 'fraction (ou la touche /)'], ['<i>x</i>', 'x', 'var'], ['<i>x</i><sup>2</sup>', 'x2', 'var', 'x au carré'],
+  ['1'], ['2'], ['3'], ['0'], [','], ['<span class="boite"></span><sup>2</sup>', 'carre', 'var', 'au carré (ou la touche ²)'], ['<span class="boite"></span><sup><i>n</i></sup>', 'pow', 'var', 'exposant (ou la touche ^)'],
+  ['√<span class="boite"></span>', 'sqrt', 'var', 'racine carrée'],
+  ['◀', 'gauche', 'nav', 'curseur à gauche'], ['▶', 'droite', 'nav', 'curseur à droite'],
+  ['⌫', 'effacer', 'nav large', 'effacer'], ['Tout effacer', 'vider', 'nav large']
 ];
 
 function creerVerifier(ctx) {
   ctx.q.innerHTML = `<div class="saisie">
-      <label class="champ" data-k="f"><span class="nom m"><i>f</i>(<i>x</i>) =</span>
-        <input class="ecrit" data-k="f" inputmode="none" autocomplete="off" spellcheck="false" placeholder="ta fonction" aria-label="Ta fonction f(x)"></label>
-      <div class="apercu m" data-k="f"></div>
-      <label class="champ" data-k="d"><span class="nom m"><i>f</i>′(<i>x</i>) =</span>
-        <input class="ecrit" data-k="d" inputmode="none" autocomplete="off" spellcheck="false" placeholder="ta dérivée (pour « Vérifier »)" aria-label="Ta dérivée f′(x)"></label>
-      <div class="apercu m" data-k="d"></div>
-      <p class="astuce" aria-live="polite"></p>
-      <div class="clavier" role="group" aria-label="Clavier mathématique">${TOUCHES.map(([lib, ins, rec, cls, titre], i) =>
+      <div class="champ" data-k="f"><span class="nom m"><i>f</i>(<i>x</i>) =</span>
+        <div class="ecrit m" data-k="f" data-vide="ta fonction"></div></div>
+      <div class="apercu" data-k="f" aria-live="polite"></div>
+      <div class="champ" data-k="d"><span class="nom m"><i>f</i>′(<i>x</i>) =</span>
+        <div class="ecrit m" data-k="d" data-vide="ta dérivée (pour « Vérifier »)"></div></div>
+      <div class="apercu" data-k="d" aria-live="polite"></div>
+      <p class="astuce"><b>/</b> fraction · <b>^</b> exposant · <b>→</b> pour sortir d’une case</p>
+      <div class="clavier" role="group" aria-label="Clavier mathématique">${TOUCHES.map(([lib, ins, cls, titre], i) =>
         `<button type="button" class="touche ${cls || ''}" data-i="${i}"${titre ? ` title="${titre}" aria-label="${titre}"` : ''}>${lib}</button>`).join('')}</div>
     </div>
     <div class="en-corr"><span class="m rappel"></span><button type="button" class="btn modifier">✎ Modifier ma fonction</button></div>
     <div class="q-corr"></div>`;
   const $q = s => ctx.q.querySelector(s);
-  const champ = k => $q(`input[data-k="${k}"]`);
+  const champ = k => $q(`.ecrit[data-k="${k}"]`);
+  // les deux champs mathématiques (fractions, exposants et racines affichés comme sur papier)
+  const ed = {
+    f: creerEditeur(champ('f'), { label: 'Ta fonction f(x)' }),
+    d: creerEditeur(champ('d'), { label: 'Ta dérivée f′(x)' })
+  };
   let actif = 'f', premier = true;
 
   // tableau (à droite) : la fonction en grand, la dérivée de l'élève, le verdict
@@ -3263,19 +3569,17 @@ function creerVerifier(ctx) {
   }
 
   /* ---------- aperçu en direct ---------- */
-  const lireF = () => lireExpression(champ('f').value, 'ta fonction');
-  const lireD = () => lireExpression(champ('d').value, 'ta dérivée', LIMITES.d);
+  const lireF = () => lireExpression(ed.f.texte(), 'ta fonction');
+  const lireD = () => lireExpression(ed.d.texte(), 'ta dérivée', LIMITES.d);
+  // sous chaque champ : seulement ce qui ne va pas dans l'écriture (le champ montre déjà la fraction, l'exposant…)
   function apercu(k, r) {
     const el = $q(`.apercu[data-k="${k}"]`);
-    el.classList.toggle('erreur', !r.vide && !r.ok);
-    el.innerHTML = r.vide ? '' : r.ok ? (k === 'f' ? '<i>f</i>(<i>x</i>) = ' : '<i>f</i>′(<i>x</i>) = ') + E.html(r.a) : '<span class="pb">' + r.msg + '</span>';
+    // (pas pendant que l'élève écrit : une case vide, une parenthèse pas encore fermée… sont normales ; « Vérifier » les signale)
+    el.innerHTML = !r.vide && !r.ok && !r.incomplet ? '<span class="pb">' + r.msg + '</span>' : '';
   }
   function maj() {
     const f = lireF(), d = lireD();
     apercu('f', f); apercu('d', d);
-    // « 1/2x » se lit (1/2)·x : on le signale
-    const amb = /\/\s*\d+(?:[.,]\d+)?\s*(?:x|√|sqrt|\()/.test(champ('f').value + ' ' + champ('d').value);
-    $q('.astuce').innerHTML = amb ? 'Attention : 1/2<i>x</i> se lit (1/2)·<i>x</i>. Pour 1/(2<i>x</i>), mets des parenthèses : regarde l’aperçu.' : '';
     $z('.v-f').innerHTML = f.ok ? '<span class="m"><i>f</i>(<i>x</i>) = ' + E.html(f.a) + '</span>' : '';
     $z('.v-d').innerHTML = d.ok ? '<span class="lab">Ta dérivée</span><span class="m"><i>f</i>′(<i>x</i>) = ' + E.html(d.a) + '</span>' : '';
     $z('.v-aide').innerHTML = f.ok ? '' : '👈 Écris la fonction de ton exercice à gauche, avec le clavier de l’écran ou celui de l’ordinateur. Elle s’affiche ici en grand.';
@@ -3294,7 +3598,7 @@ function creerVerifier(ctx) {
     if (App.sol) { newQuestion(true); return; }
     if (App.solved) { App.solved = false; clearFeedback(); setState(); }
     verdict(null);
-    try { storeSet(App.key + '.f', champ('f').value); } catch (e) {}
+    try { storeSet(App.key + '.f', ed.f.texte()); } catch (e) {}
     maj();
   }
   ['f', 'd'].forEach(k => {
@@ -3302,19 +3606,14 @@ function creerVerifier(ctx) {
     i.addEventListener('focus', () => { actif = k; });
     i.addEventListener('input', modifie);
     // Entrée dans la fonction : on passe à la dérivée (Entrée dans la dérivée : « Vérifier »)
-    if (k === 'f') i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); champ('d').focus(); } });
+    if (k === 'f') i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); ed.d.focus(); } });
   });
   $q('.clavier').addEventListener('pointerdown', e => { if (e.target.closest('.touche')) e.preventDefault(); });   // le champ garde le curseur
   $q('.clavier').addEventListener('click', e => {
     const b = e.target.closest('.touche'); if (!b) return;
-    const [lib, ins = lib, rec = 0] = TOUCHES[+b.dataset.i], i = champ(actif);
-    let s = i.selectionStart ?? i.value.length, f = i.selectionEnd ?? s;
-    if (ins === 'gauche' || ins === 'droite') { const p = Math.max(0, Math.min(i.value.length, s + (ins === 'gauche' ? -1 : 1))); i.focus(); i.setSelectionRange(p, p); return; }
-    if (ins === 'vider') i.value = '';
-    else if (ins === 'effacer') { if (s === f && s > 0) s--; i.setRangeText('', s, f, 'end'); }
-    else { i.setRangeText(ins, s, f, 'end'); const p = i.selectionEnd - rec; i.setSelectionRange(p, p); }
-    i.focus();
-    i.dispatchEvent(new Event('input', { bubbles: true }));
+    const [lib, cmd = lib] = TOUCHES[+b.dataset.i];
+    ed[actif].focus();
+    ed[actif].commande(cmd);
   });
   $q('.modifier').onclick = () => newQuestion(true);
 
@@ -3340,11 +3639,11 @@ function creerVerifier(ctx) {
   return {
     next(meme) {
       cancelAnim();
-      if (premier) { champ('f').value = storeGet(App.key + '.f', '') || ''; premier = false; }
-      else if (!meme) { champ('f').value = ''; champ('d').value = ''; }
+      if (premier) { ed.f.definir(storeGet(App.key + '.f', '') || ''); premier = false; }
+      else if (!meme) { ed.f.definir(''); ed.d.definir(''); }
       modeSaisie(); verdict(null); maj();
       actif = 'f';
-      if (matchMedia('(pointer: fine)').matches) setTimeout(() => champ(!champ('f').value || meme ? 'f' : 'd').focus(), 0);
+      if (matchMedia('(pointer: fine)').matches) setTimeout(() => ed[ed.f.vide() || meme ? 'f' : 'd'].focus(), 0);
     },
     check() {
       const f = lireF(), d = lireD();
@@ -3375,7 +3674,7 @@ function creerVerifier(ctx) {
     hint() { return null; },
     edited() { verdict(null); },
     solve() { return inner.solve(); },
-    debug: () => ({ inner: inner.debug(), lireF, lireD, definie })
+    debug: () => ({ inner: inner.debug(), lireF, lireD, definie, ed })
   };
 }
 
@@ -3384,7 +3683,7 @@ register({ id: 'verifier', title: 'Ta fonction, ta dérivée', short: 'Vérifier
   levels: [['', 'les fonctions du chapitre']],
   newLabel: () => '↻ Nouvelle fonction',
   scoreVide: 'Ta fonction reste écrite si tu recharges la page.',
-  consigne: () => 'Écris la fonction de ton exercice (clavier de l’écran ou de l’ordinateur), puis <b>ta dérivée</b> et clique sur « ✓ Vérifier ». Tu peux aussi regarder la « ▶ Correction animée ».',
+  consigne: () => 'Écris ta fonction, puis <b>ta dérivée</b>, et clique sur « ✓ Vérifier ». Ou regarde la « ▶ Correction animée ».',
   create: creerVerifier
 });
 
