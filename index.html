@@ -18,7 +18,7 @@
 <div class="reprendre" id="reprendre" hidden></div>
 <script>
 (function () {
-  var connus = {"limites-asymptotes/etude-de-fonction.html":"Chapitre 1","derivees/derivees.html":"Chapitre 2"}, d = null;
+  var connus = {"limites-asymptotes/etude-de-fonction.html":"Chapitre 1","derivees/derivees.html":"Chapitre 2","derivees/verifier.html":"Chapitre 2"}, d = null;
   try { d = JSON.parse(localStorage.getItem("site-56elmi.dernier")); } catch (e) {}
   if (!d || !connus[d.href]) return;
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -36,7 +36,7 @@
     <span class="etat">1 outil →</span></a></li>
 <li><a class="fiche" style="--accent:#A00058;--bg:#F9EDF3" href="derivees/index.html"><span class="rond">2</span>
     <span class="texte"><b>Dérivées</b><span>Nombre dérivé, fonction dérivée et formules de dérivation, tangente, croissance et extremums.</span></span>
-    <span class="etat">1 outil →</span></a></li>
+    <span class="etat">2 outils →</span></a></li>
 </ul>
 </main>
 </body>
