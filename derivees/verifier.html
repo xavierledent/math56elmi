@@ -532,21 +532,16 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .simpl-corps .bx.calc-dst { background: color-mix(in srgb, var(--cc) 16%, transparent); }
 
 /* =====================================================================
-   Outil « Vérifier une dérivée » : saisie, clavier à l'écran, tableau de droite
+   Champ mathématique (editeur.js) et touches du clavier à l'écran : commun aux deux classes
+   (« Vérifier une dérivée » en 5e-6e, « La droite » en 4e : les deux builds reprennent ce fichier)
    ===================================================================== */
-/* pas d'indice ni d'« Autre question » : « Nouvelle fonction » suffit */
-#bHint, #bNext { display: none; }
-.question:has(.saisie) { display: block; text-align: left; font-size: 18px; padding: 12px 12px 10px; }
-.saisie .champ { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
-.saisie .champ .nom { flex: none; width: 4.4em; font-size: 19px; text-align: right; }
-/* champ mathématique (editeur.js) : fractions, exposants et racines comme sur papier */
-.saisie .ecrit {
+.ecrit {
   flex: 1; min-width: 0; min-height: 46px; padding: 4px 10px; border-radius: 9px; border: 2px dashed var(--accent); background: #fff;
   font-size: 22px; line-height: 1.25; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; cursor: text;
   touch-action: manipulation; user-select: none; -webkit-user-select: none;
 }
-.saisie .ecrit.ed-focus { outline: none; border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
-.saisie .ecrit:not(.ed-plein):not(.ed-focus)::before { content: attr(data-vide); font: 400 15px var(--ui); color: var(--ink3); }
+.ecrit.ed-focus { outline: none; border-style: solid; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.ecrit:not(.ed-plein):not(.ed-focus)::before { content: attr(data-vide); font: 400 15px var(--ui); color: var(--ink3); }
 .ed-row { display: inline-flex; align-items: center; white-space: nowrap; min-height: 1.2em; }
 .ed-racine { padding: 2px 0; }
 .ed-c, .ed-var { padding: 0 .02em; }
@@ -565,14 +560,7 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .ed-vide > .ed-cur { margin-left: .3em; }
 @keyframes ed-clign { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .ed-focus .ed-cur { animation: none; } }
-/* sous chaque champ : seulement ce qui ne va pas dans l'écriture */
-.saisie .apercu { margin: -2px 0 8px calc(4.4em + 8px); }
-.saisie .apercu:empty { display: none; }
-.saisie .apercu .pb { font: 500 13px/1.4 var(--ui); color: var(--ko); }
-.saisie .astuce { margin: 0 0 6px; font: 500 12.5px/1.4 var(--ui); color: var(--ink2); }
-@media (pointer: coarse) { .saisie .astuce { display: none; } }
 .touche .boite { display: inline-block; width: .62em; height: .78em; border: 1.5px solid currentColor; border-radius: 2px; vertical-align: -.08em; }
-.clavier { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 4px; }
 .touche {
   min-height: 40px; padding: 0 2px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff; color: var(--ink);
   font: 600 18px "Source Serif 4", Georgia, serif; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none;
@@ -586,6 +574,23 @@ svg.arcs path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-dasha
 .touche.frac .fq { font-size: 12px; }
 .touche .fq { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.05; }
 .touche .fq > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 3px; }
+
+/* =====================================================================
+   Outil « Vérifier une dérivée » : saisie, clavier à l'écran, tableau de droite
+   ===================================================================== */
+/* pas d'indice ni d'« Autre question » : « Nouvelle fonction » suffit */
+#bHint, #bNext { display: none; }
+.question:has(.saisie) { display: block; text-align: left; font-size: 18px; padding: 12px 12px 10px; }
+.saisie .champ { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.saisie .champ .nom { flex: none; width: 4.4em; font-size: 19px; text-align: right; }
+/* champ mathématique (editeur.js) : fractions, exposants et racines comme sur papier */
+/* sous chaque champ : seulement ce qui ne va pas dans l'écriture */
+.saisie .apercu { margin: -2px 0 8px calc(4.4em + 8px); }
+.saisie .apercu:empty { display: none; }
+.saisie .apercu .pb { font: 500 13px/1.4 var(--ui); color: var(--ko); }
+.saisie .astuce { margin: 0 0 6px; font: 500 12.5px/1.4 var(--ui); color: var(--ink2); }
+@media (pointer: coarse) { .saisie .astuce { display: none; } }
+.clavier { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 4px; }
 /* pendant la correction : la saisie se replie, on rappelle la fonction */
 .question .en-corr { display: none; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 .question .en-corr .rappel { font-size: 19px; overflow-x: auto; }
@@ -1119,7 +1124,7 @@ const E = (() => {
   const R = a => ({ t: 'r', a });
   const G = a => ({ t: 'g', a });
   const ONE = F(1), ZERO = F(0);
-  const key = a => JSON.stringify(a, (k, v) => k === 'dot' ? undefined : v);
+  const key = a => JSON.stringify(a, (k, v) => k === 'dot' || k === 'par' ? undefined : v);
   const eq = (a, b) => key(a) === key(b);
   const isN = (a, v) => a.t === 'n' && (v === undefined || feq(a.v, fr(v)));
 
@@ -1596,28 +1601,31 @@ const E = (() => {
     switch (a.t) {
       case 'n': {
         const s = (a.v.n < 0 ? MINUS : '') + numHTML(a.v, ctx === 'coef');
-        return a.v.n < 0 && (ctx === 'facteur' || ctx === 'base') ? par(s) : s;
+        return a.v.n < 0 && (ctx === 'facteur' || ctx === 'base' || ctx === 'terme') ? par(s) : s;
       }
       case 'x': return '<i>x</i>';
       case 'h': return `<span class="trou${a.cls ? ' ' + a.cls : ''}${a.v ? ' plein' : ''}" data-h="${a.id}">${a.v ? html(a.v, ctx === 'top' ? 'top' : ctx) : '<span class="vide">?</span>'}</span>`;
       case 'g': {
         // fraction seule ou en tête : le signe va au numérateur, comme dans le cours (−4 sur (4x + 1)²)
-        if (ctx === 'top' && a.a.t === 'q' && a.a.n.t === 'n') return `<span class="fq"><span>${MINUS}${html(a.a.n, 'top')}</span><span>${html(a.a.d, 'top')}</span></span>`;
-        const s = MINUS + html(a.a, 'facteur0'); return ctx === 'facteur' || ctx === 'base' ? par(s) : s; }
+        if (ctx === 'top' && a.a.t === 'q' && a.a.n.t === 'n' && a.a.n.v.n > 0) return `<span class="fq"><span>${MINUS}${html(a.a.n, 'top')}</span><span>${html(a.a.d, 'top')}</span></span>`;
+        // l'opposé d'un nombre négatif garde ses parenthèses : −(−5), jamais « −−5 »
+        const s = MINUS + html(a.a, splitSign(a.a)[0] ? 'facteur' : 'facteur0'); return ctx === 'facteur' || ctx === 'base' || ctx === 'terme' ? par(s) : s; }
       case 'r': { const s = `<span class="rac">${RAC}<span class="rac-i">${html(a.a, 'top')}</span></span>`; return ctx === 'base' ? par(s) : s; }
       case 'q': {
         const [s, n] = splitSign(a);
         const h = `<span class="fq"><span>${html(s ? n.n : a.n, 'top')}</span><span>${html(a.d, 'top')}</span></span>`;
         if (s && n.n.t === 'n' && ctx === 'top') return `<span class="fq"><span>${MINUS}${html(n.n, 'top')}</span><span>${html(a.d, 'top')}</span></span>`;
         const out = s ? MINUS + `<span class="fq"><span>${html(n.n, 'top')}</span><span>${html(a.d, 'top')}</span></span>` : h;
-        return ctx === 'base' || (s && ctx === 'facteur') ? par(out) : out;
+        return ctx === 'base' || (s && (ctx === 'facteur' || ctx === 'terme')) ? par(out) : out;
       }
       case 'w': if (ctx === 'base') return par(html(a, 'top'));
         return `${html(a.b, 'base')}<sup>${a.e < 0 ? MINUS : ''}${Math.abs(a.e)}</sup>`;
       case 's': {
         const s = a.a.map((b, i) => {
           if (i === 0) return html(b, 'top');
-          const [sg, abs] = splitSign(b), op = `<span class="op">${sg ? MINUS : '+'}</span>`;
+          // « − » devant un terme négatif : on écrit − (−1/x²), pas « − −1/x² » ni « + 1/x² » (ce serait déjà
+          // un pas de calcul) ; un terme marqué .par (case remplie avec un négatif) s'écrit + (−1/x²)
+          const [sg, abs] = b.t === 'g' ? [true, b.a] : b.par ? [false, b] : splitSign(b), op = `<span class="op">${sg ? MINUS : '+'}</span>`;
           const m = MARKS && MARKS.get(b);           // terme encadré avec son signe
           return m ? boite(m, op + html0(abs, 'terme')) : op + html(abs, 'terme');
         }).join('');
@@ -1634,7 +1642,7 @@ const E = (() => {
           }
           s += h;
         });
-        return ctx === 'base' || (ctx === 'facteur' && splitSign(a)[0]) ? par(s) : s;
+        return ctx === 'base' || ((ctx === 'facteur' || ctx === 'terme') && splitSign(a)[0]) ? par(s) : s;
       }
     }
   }
@@ -1879,10 +1887,11 @@ function propositions(a, comp = true) {
 const OPS_MORCEAUX = ['produit', 'quotient', 'puissance', 'racine', 'inverse'];
 const NOM_OP = { somme: 'Somme', kf: 'k·f', produit: 'Produit', quotient: 'Quotient', puissance: 'Composée uⁿ', inverse: 'Composée 1/u', racine: 'Composée √u', base: 'Formule de base', cst: 'Constante' };
 
-// glisser un élément (étiquette, terme) vers une cible ; un simple clic appelle onClic
+// glisser un élément (étiquette, terme) vers une cible ; un simple clic appelle onClic.
+// Rien pendant la correction animée (App.sol) : c'est l'outil qui place les tuiles.
 function glisserVers(el, fantomeHTML, selCible, onDepot, onClic) {
   el.addEventListener('pointerdown', e => {
-    if (e.button > 0) return;
+    if (e.button > 0 || App.sol) return;
     e.preventDefault(); e.stopPropagation();
     const x0 = e.clientX, y0 = e.clientY;
     let fantome = null, survol = null;
@@ -1896,9 +1905,9 @@ function glisserVers(el, fantomeHTML, selCible, onDepot, onClic) {
     };
     const fin = ev => {
       removeEventListener('pointermove', bouge); removeEventListener('pointerup', fin); removeEventListener('pointercancel', fin);
-      if (!fantome) { onClic(); return; }
+      if (!fantome) { if (!App.sol) onClic(); return; }
       fantome.remove(); if (survol) survol.classList.remove('survol');
-      const c = ev.type === 'pointerup' && cible(ev);
+      const c = ev.type === 'pointerup' && !App.sol && cible(ev);
       if (c) onDepot(c);
     };
     addEventListener('pointermove', bouge); addEventListener('pointerup', fin); addEventListener('pointercancel', fin);
@@ -2134,7 +2143,7 @@ function creerFormule(ctx) {
     });
     function poser(T, rChoisi) {
       const ph = phase();
-      if (!ph || ph.type !== 'pieces' || T.parent !== ph.T) return;
+      if (App.sol || !ph || ph.type !== 'pieces' || T.parent !== ph.T) return;   // rien pendant la correction
       const roles = rolesDe(ph);
       let r = rChoisi || st.sel || roles.find(x => !ph.T.kids.some(k => st.lab[k.id] === x));
       if (!r) r = roles[(roles.indexOf(st.lab[T.id]) + 1) % roles.length];
@@ -2475,7 +2484,8 @@ function planDe(T, comp) {
 // formule remplie écrite sans ses cases (chaque case remplacée par sa valeur)
 function sansCases(a) {
   if (!a || typeof a !== 'object') return a;
-  if (a.t === 'h') return a.v;
+  // une case remplie avec un négatif garde ses parenthèses : 3 + (−1/x²) n'est pas encore la forme finale
+  if (a.t === 'h') return a.v && E.splitSign(a.v)[0] ? Object.assign({}, a.v, { par: true }) : a.v;
   const b = Object.assign({}, a);
   for (const k of ['a', 'n', 'd', 'b']) { const c = a[k]; if (Array.isArray(c)) b[k] = c.map(sansCases); else if (c && c.t) b[k] = sansCases(c); }
   return b;
@@ -2820,7 +2830,7 @@ function creerRemplir(ctx) {
           + c.props.map((o, j) => `<button class="opt${st.choix[c.id] === j ? ' on' : ''}" data-c="${i}" data-o="${j}"${st.bonChoix.has(c.id) ? ' disabled' : ''}><span class="m">${E.html(o.node)}</span></button>`).join('')
           + (st.bonChoix.has(c.id) ? '<span class="verrou" title="Juste : cette dérivée est gardée">✓</span>' : '') + '</span></div>').join('');
         ctx.q.querySelectorAll('.opt').forEach(b => b.onclick = () => {
-          const c = p.choix[+b.dataset.c]; if (st.bonChoix.has(c.id)) return; st.choix[c.id] = +b.dataset.o; st.fauxChoix.delete(c.id); ctx.changed(); dessinerReponse();
+          const c = p.choix[+b.dataset.c]; if (App.sol || st.bonChoix.has(c.id)) return;   // rien pendant la correction st.choix[c.id] = +b.dataset.o; st.fauxChoix.delete(c.id); ctx.changed(); dessinerReponse();
         });
         return;
       }
@@ -2844,7 +2854,7 @@ function creerRemplir(ctx) {
       else { delete st.cases[cle(ph.p, casesDe(ph.p.tmpl)[i], i)]; st.faux.delete(i); ctx.changed(); dessiner(); }
     }
     function poserTuile(el, id) {
-      const ph = phase(); if (st.fini || !ph || ph.type !== 'placer') return;
+      const ph = phase(); if (App.sol || st.fini || !ph || ph.type !== 'placer') return;
       const i = +el.dataset.h.split(':')[1];
       if (st.bonCases.has(i)) return;
       st.cases[cle(ph.p, casesDe(ph.p.tmpl)[i], i)] = id;
@@ -3130,6 +3140,12 @@ function exercicesCours(ctx, niv, charger) {
      - ⌫ au début d'une case vide la défait.
    Le contenu se lit comme une écriture du moteur (texte()), avec des parenthèses autour de chaque
    fraction, exposant et racine : il n'y a plus d'ambiguïté du genre « 1/2x ».
+   Champ commun aux deux classes (le build de 4e le reprend tel quel) :
+     opt.label : nom pour les lecteurs d'écran ;
+     opt.arbre(texte) : lit une écriture en arbre du moteur (5e-6e), pour que definir() affiche fractions et racines ;
+       sans lui, definir() écrit les caractères tels quels ;
+     opt.egal : accepte « = » (équations de droites, 4e) ;
+     opt.puissances === false : ni exposant, ni carré, ni racine (une équation de droite n'en a pas besoin).
    Structure : une ligne = { items: [], parent } ; un élément = caractère { t: 'c', c }, ou
    { t: 'frac', n, d }, { t: 'pow', e }, { t: 'sqrt', a } (n, d, e, a : des lignes).
    ===================================================================== */
@@ -3291,7 +3307,7 @@ function creerEditeur(el, opt = {}) {
   function definir(s) {
     racine.items = [];
     if (s) {
-      try { racine.items = depuis(E.parse(normaliser(s))); } catch (e) { racine.items = [...String(s)].map(car); }
+      try { racine.items = opt.arbre ? depuis(opt.arbre(s)) : [...String(s)].map(car); } catch (e) { racine.items = [...String(s)].map(car); }
       racine.items.forEach(it => { it.row = racine; });
     }
     cur = { row: racine, i: racine.items.length };
@@ -3299,7 +3315,7 @@ function creerEditeur(el, opt = {}) {
   }
 
   /* ---------- affichage ---------- */
-  const OPS = { '+': '+', '−': '−', '×': '×' };
+  const OPS = { '+': '+', '−': '−', '×': '×', '=': '=' };
   function rendRow(r, cls) {
     const span = document.createElement('span');
     span.className = 'ed-row' + (cls ? ' ' + cls : '');
@@ -3340,6 +3356,7 @@ function creerEditeur(el, opt = {}) {
 
   /* ---------- commandes (clavier de l'écran et clavier physique) ---------- */
   function commande(cmd) {
+    if (opt.puissances === false && /^(pow|carre|x2|sqrt)$/.test(cmd)) return;
     // dans un exposant, seulement un nombre entier (chapitre 2) : tout autre signe fait sortir de l'exposant
     // (« x^2+1 » donne x² + 1, comme sur papier) ; un « − » en tête reste dedans (x⁻²)
     const p = cur.row.parent;
@@ -3377,7 +3394,7 @@ function creerEditeur(el, opt = {}) {
       const it = cur.row.items, j = cur.i;
       if (j >= 3 && it.slice(j - 3, j).map(x => x.c).join('') === 'sqr') { it.splice(j - 3, 3); cur.i -= 3; commande('sqrt'); return; }
     }
-    if (/^[0-9a-z+−×(),]$/i.test(c) || ['frac', 'pow', 'carre', 'sqrt'].includes(c)) commande(c.length === 1 ? c.toLowerCase() : c);
+    if (/^[0-9a-z+−×(),]$/i.test(c) || (opt.egal && c === '=') || ['frac', 'pow', 'carre', 'sqrt'].includes(c)) commande(c.length === 1 ? c.toLowerCase() : c);
   });
   // un clic place le curseur (avant ou après le caractère, selon la moitié cliquée)
   el.addEventListener('pointerdown', e => {
@@ -3539,8 +3556,8 @@ function creerVerifier(ctx) {
   const champ = k => $q(`.ecrit[data-k="${k}"]`);
   // les deux champs mathématiques (fractions, exposants et racines affichés comme sur papier)
   const ed = {
-    f: creerEditeur(champ('f'), { label: 'Ta fonction f(x)' }),
-    d: creerEditeur(champ('d'), { label: 'Ta dérivée f′(x)' })
+    f: creerEditeur(champ('f'), { label: 'Ta fonction f(x)', arbre: s => E.parse(normaliser(s)) }),
+    d: creerEditeur(champ('d'), { label: 'Ta dérivée f′(x)', arbre: s => E.parse(normaliser(s)) })
   };
   let actif = 'f', premier = true;
 
